@@ -24,10 +24,10 @@ spring:
       datasource:
         # 数据源-1，名称为 primary
         primary:
-          username: root
-          password: 123456
+          username: tongzhuangshui
+          password: 8JZXtHzpynMtGZw3
           driver-class-name: com.mysql.cj.jdbc.Driver
-          url: jdbc:mysql://127.0.0.1:3306/bottled_water_sales_cos?useUnicode=true&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+          url: jdbc:mysql://81.68.239.216:3306/tongzhuangshui?useUnicode=true&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
         # 数据源-2，名称为 test
 #        test:
 #          username: root
@@ -78,6 +78,8 @@ management:
 febs:
   # 是否异步记录用户操作日志
   openAopLog: true
+  # 图片/文件上传存放目录，相对路径基于项目运行目录
+  uploadPath: upload
   # 单次最大批量入库数量
   max:
     batch:
