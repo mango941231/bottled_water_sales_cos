@@ -10,6 +10,9 @@
     "build": "node build/build.js",
     "postinstall": "node scripts/patch-http-deceiver.js"
   },
+  "overrides": {
+    "vue-template-compiler": "$vue"
+  },
   "dependencies": {
     "ant-design-vue": "^1.3.7",
     "apexcharts": "^2.6.0",

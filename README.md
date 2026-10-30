@@ -17,7 +17,7 @@ JAVA 环境
 
 Node.js环境 [https://nodejs.org/en/] 选择14.17
 
-Yarn 打开cmd， 输入npm install -g yarn !!!必须安装完毕nodejs
+npm 随 Node.js 一起安装，无需额外安装 yarn（项目统一使用 npm + package-lock.json）
 
 Mysql 数据库 一定要把账户和密码记住
 
@@ -164,8 +164,8 @@ pharmacy-dispensing-system/
 
 
 #### 前台启动方式
-安装所需文件 yarn install 
-运行 yarn run dev
+安装所需文件 npm ci （必须用 npm ci，严格按 package-lock.json 安装）
+运行 npm run dev
 
 #### 默认后台账户密码
 [管理员]
