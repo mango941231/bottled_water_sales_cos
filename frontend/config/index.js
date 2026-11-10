@@ -70,7 +70,8 @@ module.exports = {
     // Run the build command with an extra argument to
     // View the bundle analyzer report after build finishes:
     // `npm run build --report`
-    // Set to `true` or `false` to always turn it on or off
-    bundleAnalyzerReport: true
+    // 默认关闭。开启后 analyzer 会启动常驻服务（8888 端口），
+    // 导致 `npm run build` 进程无法退出，不适合 CI / 自动化部署场景
+    bundleAnalyzerReport: process.env.npm_config_report === 'true'
   }
 }

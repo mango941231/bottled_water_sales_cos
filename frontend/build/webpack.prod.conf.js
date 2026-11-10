@@ -141,7 +141,13 @@ if (config.build.productionGzip) {
 
 if (config.build.bundleAnalyzerReport) {
   const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
-  webpackConfig.plugins.push(new BundleAnalyzerPlugin())
+  // analyzerMode: 'server' 会启动常驻服务导致构建进程无法退出，
+  // 部署场景使用 'static' 生成静态报告，构建完自动退出
+  webpackConfig.plugins.push(new BundleAnalyzerPlugin({
+    analyzerMode: 'static',
+    openAnalyzer: false,
+    reportFilename: 'bundle-report.html'
+  }))
 }
 
 module.exports = webpackConfig

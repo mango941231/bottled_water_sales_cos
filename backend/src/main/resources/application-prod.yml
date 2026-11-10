@@ -1,0 +1,47 @@
+# 生产环境配置（Tomcat 部署）
+# 激活方式：/opt/tomcat9/bin/setenv.sh 中设置 export SPRING_PROFILES_ACTIVE=prod
+# 所有敏感信息均通过环境变量注入，不写死在配置文件里
+server:
+  # 部署到外部 Tomcat 后由容器接管端口，Tomcat 默认 8080
+  port: 8080
+
+spring:
+  datasource:
+    dynamic:
+      # 生产环境关闭 SQL 打印，开启有性能损耗
+      p6spy: false
+      hikari:
+        connection-timeout: 30000
+        max-lifetime: 1800000
+        max-pool-size: 15
+        min-idle: 5
+        connection-test-query: select 1
+        pool-name: FebsHikariCP
+      primary: primary
+      datasource:
+        primary:
+          username: ${DB_USERNAME:tongzhuangshui}
+          password: ${DB_PASSWORD:}
+          driver-class-name: com.mysql.cj.jdbc.Driver
+          url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:tongzhuangshui}?useUnicode=true&characterEncoding=UTF-8&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+
+  redis:
+    host: ${REDIS_HOST:127.0.0.1}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+    jedis:
+      pool:
+        min-idle: 8
+        max-idle: 500
+        max-active: 2000
+        max-wait: 10000
+    timeout: 0
+
+febs:
+  # 图片/文件上传目录，生产环境必须使用绝对路径，
+  # 否则 Tomcat 切换工作目录后历史文件会丢失
+  uploadPath: ${UPLOAD_PATH:/opt/tomcat9/webapps/febs/upload}
+
+logging:
+  # 日志输出到 Tomcat 日志目录
+  path: ${LOG_PATH:/opt/tomcat9/logs}

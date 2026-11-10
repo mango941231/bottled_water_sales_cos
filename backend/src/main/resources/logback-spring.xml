@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="60 seconds" debug="false">
     <contextName>febs</contextName>
-    <property name="log.path" value="log" />
+    <!-- 日志目录：可通过环境变量 LOG_PATH 指定，默认为相对目录 log -->
+    <property name="log.path" value="${LOG_PATH:-log}" />
     <property name="log.maxHistory" value="15" />
     <property name="log.colorPattern" value="%d{yyyy-MM-dd HH:mm:ss} | %highlight(%-5level) | %boldYellow(%thread) | %boldGreen(%logger) | %msg%n"/>
     <property name="log.pattern" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %contextName [%thread] %-5level %logger{36} - %msg%n" />

@@ -7,7 +7,9 @@ moment.locale('zh-cn')
 
 // 统一配置
 let FEBS_REQUEST = axios.create({
-  baseURL: 'http://127.0.0.1:9527/',
+  // 生产环境走 config/prod.env.js 的 VUE_APP_BASE_API（默认 '/febs/'，由 Nginx 反代到 Tomcat）
+  // 开发环境走 config/dev.env.js 的 VUE_APP_BASE_API
+  baseURL: process.env.VUE_APP_BASE_API || '/febs/',
   responseType: 'json',
   validateStatus (status) {
     // 200 外的状态码都认定为失败

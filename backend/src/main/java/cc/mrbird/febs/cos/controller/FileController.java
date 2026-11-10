@@ -3,6 +3,7 @@ package cc.mrbird.febs.cos.controller;
 import cc.mrbird.febs.common.annotation.Log;
 import cc.mrbird.febs.common.utils.FileUtil;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -15,6 +16,13 @@ import org.springframework.web.multipart.MultipartFile;
 public class FileController {
 
     /**
+     * 文件上传存放目录，由配置项 febs.uploadPath 指定。
+     * 生产环境请配置为绝对路径，避免部署到 Linux 后相对路径随工作目录漂移
+     */
+    @Value("${febs.uploadPath}")
+    private String uploadPath;
+
+    /**
      * 文件上传
      * @param file 上传的文件
      * @return
@@ -23,7 +31,7 @@ public class FileController {
     @RequestMapping("/fileUpload")
     public String upload(@RequestParam("avatar") MultipartFile file){
         // 1定义要上传文件 的存放路径
-         String localPath="G:/Project/20250221桶装水销售配送系统/db";
+         String localPath=uploadPath;
         // 2获得文件名字
         String fileName=file.getOriginalFilename();
         // 2上传失败提示
