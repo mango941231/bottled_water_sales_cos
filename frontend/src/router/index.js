@@ -43,21 +43,16 @@ router.beforeEach((to, from, next) => {
 function auth (to, next) {
   let token = db.get('USER_TOKEN')
   let user = db.get('USER')
-  let userRouter = get('USER_ROUTER')
   if (typeof token === 'string' && token.length && user && user.username) {
     if (!asyncRouter) {
-      if (!userRouter) {
-        request.get(`menu/${user.username}`).then((res) => {
-          asyncRouter = res.data
-          save('USER_ROUTER', asyncRouter)
-          go(to, next)
-        }).catch(() => {
-          next('/login')
-        })
-      } else {
-        asyncRouter = userRouter
+      // Refresh server-side menu assignments instead of retaining stale browser routes.
+      request.get(`menu/${user.username}`).then((res) => {
+        asyncRouter = res.data
+        save('USER_ROUTER', asyncRouter)
         go(to, next)
-      }
+      }).catch(() => {
+        next('/login')
+      })
     } else {
       next()
     }
@@ -74,10 +69,6 @@ function go (to, next) {
 
 function save (name, data) {
   localStorage.setItem(name, JSON.stringify(data))
-}
-
-function get (name) {
-  return JSON.parse(localStorage.getItem(name))
 }
 
 function filterAsyncRouter (routes) {
@@ -109,11 +100,7 @@ function filterAsyncRouter (routes) {
 }
 
 function view (path) {
-  return function (resolve) {
-    import(`@/views/${path}.vue`).then(mod => {
-      resolve(mod)
-    })
-  }
+  return () => import(`@/views/${path}.vue`).then(mod => mod.default || mod)
 }
 
 export default router

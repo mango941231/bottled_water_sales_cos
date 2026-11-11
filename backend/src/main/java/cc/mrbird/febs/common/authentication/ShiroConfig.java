@@ -30,6 +30,13 @@ public class ShiroConfig {
         shiroFilterFactoryBean.setFilters(filters);
 
         LinkedHashMap<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
+        filterChainDefinitionMap.put("/actuator/metrics", "jwt");
+        // Metric values require both a valid session and the matching monitor menu.
+        filterChainDefinitionMap.put("/actuator/metrics/jvm.**", "jwt,perms[monitor:jvm:list]");
+        filterChainDefinitionMap.put("/actuator/metrics/system.**", "jwt,perms[monitor:systemInfo:list]");
+        filterChainDefinitionMap.put("/actuator/metrics/process.**", "jwt,perms[monitor:systemInfo:list]");
+        filterChainDefinitionMap.put("/actuator/metrics/tomcat.**", "jwt,perms[monitor:tomcat:list]");
+        filterChainDefinitionMap.put("/actuator/metrics/**", "jwt,perms[monitor:metrics:view]");
         // 所有请求都要经过 jwt过滤器
         filterChainDefinitionMap.put("/**", "jwt");
 

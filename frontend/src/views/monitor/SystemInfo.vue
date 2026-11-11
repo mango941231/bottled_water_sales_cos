@@ -1,6 +1,8 @@
 <template>
   <a-skeleton active :loading="loading" :paragraph="{rows: 17}">
     <div class="jvm-info">
+    <a-alert v-if="metricError" type="error" :message="metricError" show-icon />
+    <a-alert v-if="unavailableMetrics.length" type="warning" :message="'当前运行环境未提供部分指标：' + unavailableMetrics.join('、')" show-icon />
       <div class="alert">
         <a-alert type="success" :show-icon="true">
           <div slot="message">
@@ -45,7 +47,7 @@
   </a-skeleton>
 </template>
 <script>
-import axios from 'axios'
+import {getMetrics} from '@/utils/monitorMetrics'
 import moment from 'moment'
 moment.locale('zh-cn')
 
@@ -54,6 +56,8 @@ export default {
     return {
       time: '',
       loading: true,
+      metricError: '',
+      unavailableMetrics: [],
       system: {
         cpu: {
           count: 0,
@@ -73,25 +77,31 @@ export default {
   methods: {
     create () {
       this.time = moment().format('YYYY年MM月DD日 HH时mm分ss秒')
-      axios.all([
-        this.$get('actuator/metrics/system.cpu.count'),
-        this.$get('actuator/metrics/system.cpu.usage'),
-        this.$get('actuator/metrics/process.uptime'),
-        this.$get('actuator/metrics/process.start.time'),
-        this.$get('actuator/metrics/process.cpu.usage')
+      this.metricError = ''
+      this.loading = true
+      getMetrics(this.$get, [
+        'system.cpu.count',
+        'system.cpu.usage',
+        'process.uptime',
+        'process.start.time',
+        'process.cpu.usage'
       ]).then((r) => {
+        this.unavailableMetrics = r.filter(item => item.data.unavailable).map(item => item.data.name)
         this.system.cpu.count = r[0].data.measurements[0].value
         this.system.cpu.usage = this.convert(r[1].data.measurements[0].value)
         this.system.process.uptime = r[2].data.measurements[0].value
-        this.system.process.startTime = moment(r[3].data.measurements[0].value * 1000).format('YYYY-MM-DD HH:mm:ss')
+        this.system.process.startTime = typeof r[3].data.measurements[0].value === 'number' ? moment(r[3].data.measurements[0].value * 1000).format('YYYY-MM-DD HH:mm:ss') : '-'
         this.system.process.cpuUsage = this.convert(r[4].data.measurements[0].value)
         this.loading = false
       }).catch((r) => {
+        this.loading = false
+        this.metricError = '无法获取监控指标，请检查权限或稍后重试'
         console.error(r)
         this.$message.error('获取服务器信息失败')
       })
     },
     convert (value) {
+      if (typeof value !== 'number') return '-'
       return Number(value * 100).toFixed(2)
     }
   }

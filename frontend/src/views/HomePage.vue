@@ -1,6 +1,6 @@
 <template>
   <div :class="[multipage === true ? 'multi-page':'single-page', 'not-menu-page', 'home-page']">
-    <a-row :gutter="8" class="head-info" v-if="user.roleId == 74">
+    <a-row :gutter="8" class="head-info" v-if="isPlatformAdmin">
       <a-card class="head-info-card">
         <a-col :span="12">
 <!--          <div class="head-info-avatar">-->
@@ -37,7 +37,7 @@
         </a-col>
       </a-card>
     </a-row>
-    <a-row :gutter="8" class="count-info" v-if="user.roleId == 74">
+    <a-row :gutter="8" class="count-info" v-if="isPlatformAdmin">
       <a-col :span="12" class="visit-count-wrapper">
         <a-row :gutter="8">
           <a-col :span="12" v-show="false">
@@ -49,7 +49,8 @@
           <a-col :span="24">
             <a-card class="visit-count">
               <a-skeleton active v-if="loading" />
-              <apexchart v-if="!loading" type="line" height="300" :options="chartOptions1" :series="series1"></apexchart>
+              <apexchart v-if="!loading && series1[0].data.length" type="line" height="300" :options="chartOptions1" :series="series1"></apexchart>
+              <a-empty v-if="!loading && !series1[0].data.length" description="暂无订单数据" />
             </a-card>
           </a-col>
         </a-row>
@@ -78,13 +79,14 @@
             </a-col>
             <a-col :span="16">
               <a-skeleton active v-if="loading" />
-              <apexchart v-if="!loading" type="donut" height="265" :options="chartOptions3" :series="series3"></apexchart>
+              <apexchart v-if="!loading && hasRevenue" type="donut" height="265" :options="chartOptions3" :series="series3"></apexchart>
+              <a-empty v-if="!loading && !hasRevenue" description="暂无收益数据" />
             </a-col>
           </a-row>
         </div>
       </a-col>
     </a-row>
-    <a-row :gutter="8" class="count-info" v-if="user.roleId == 74">
+    <a-row :gutter="8" class="count-info" v-if="isPlatformAdmin">
       <a-col :span="10" style="margin-top: 10px;padding-left: 0px">
         <a-card class="visit-count" title="店铺收益统计">
           <a-skeleton active v-if="loading" />
@@ -126,11 +128,15 @@
               </a-row>
             </a-select-option>
           </a-select>
-          <apexchart v-if="!loading" ref="shopOrderRate" type="bar" height="400" :options="chartOptions2" :series="series2"></apexchart>
+          <apexchart v-if="!loading && series2[0].data.length" ref="shopOrderRate" type="bar" height="400" :options="chartOptions2" :series="series2"></apexchart>
+          <a-empty v-if="!loading && !series2[0].data.length" description="暂无店铺订单数据" />
         </a-card>
       </a-col>
     </a-row>
-    <home></home>
+    <home v-if="isShop"></home>
+    <a-card v-if="!isPlatformAdmin && !isShop" :title="welcomeMessage">
+      <p>欢迎使用桶装水配送销售平台，请从左侧菜单选择功能。</p>
+    </a-card>
   </div>
 </template>
 <script>
@@ -187,7 +193,7 @@ export default {
       },
       series1: [{
         name: '交易额（元）',
-        data: [34, 44, 54, 21, 12, 43, 33, 23, 66, 66, 58]
+        data: []
       }],
       chartOptions1: {
         chart: {
@@ -210,12 +216,12 @@ export default {
           }
         },
         xaxis: {
-          categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep']
+          categories: []
         }
       },
       series2: [{
         name: '收益额',
-        data: [44, 55, 57, 56, 61, 58, 63, 60, 66]
+        data: []
       }],
       chartOptions2: {
         chart: {
@@ -237,7 +243,7 @@ export default {
           colors: ['transparent']
         },
         xaxis: {
-          categories: ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct']
+          categories: []
         },
         fill: {
           opacity: 1
@@ -250,7 +256,7 @@ export default {
           }
         }
       },
-      series3: [44, 55, 41, 17, 15],
+      series3: [],
       chartOptions3: {
         labels: [],
         chart: {
@@ -294,7 +300,7 @@ export default {
       orderPriceRate: [],
       shopOrderRate: [],
       shopList: [],
-      loading: false,
+      loading: true,
       shopId: 1
     }
   },
@@ -303,6 +309,15 @@ export default {
       multipage: state => state.setting.multipage,
       user: state => state.account.user
     }),
+    hasRevenue () {
+      return this.series3.some(value => Number(value) > 0)
+    },
+    isPlatformAdmin () {
+      return String(this.user.roleId || '').split(',').some(id => ['1', '74'].includes(id.trim()))
+    },
+    isShop () {
+      return String(this.user.roleId || '').split(',').some(id => id.trim() === '75')
+    },
     avatar () {
       return `static/avatar/${this.user.avatar}`
     }
@@ -323,6 +338,7 @@ export default {
             })
             this.series2[0].data = shopOrderData
             setTimeout(() => {
+              if (!this.$refs.shopOrderRate) return
               this.$refs.shopOrderRate.updateOptions({
                 xaxis: {
                   categories: shopOrderLabel
@@ -373,11 +389,15 @@ export default {
         setTimeout(() => {
           this.loading = false
         }, 500)
+      }).catch(() => {
+        this.loading = false
+        this.$message.error('获取首页统计失败，请稍后重试')
       })
     }
   },
   mounted () {
     this.welcomeMessage = this.welcome()
+    if (!this.isPlatformAdmin) return
     this.$get(`index/${this.user.username}`).then((r) => {
       let data = r.data.data
       this.todayIp = data.todayIp
@@ -413,25 +433,29 @@ export default {
           sevenUserVistCount.push(0)
         }
       }
-      this.$refs.count.updateSeries([
-        {
-          name: '您',
-          data: sevenUserVistCount
-        },
-        {
-          name: '总数',
-          data: sevenVisitCount
-        }
-      ], true)
-      this.$refs.count.updateOptions({
-        xaxis: {
-          categories: dateArr
-        },
-        title: {
-          text: '近七日系统访问记录',
-          align: 'left'
-        }
-      }, true, true)
+      if (this.$refs.count) {
+        this.$refs.count.updateSeries([
+          {
+            name: '您',
+            data: sevenUserVistCount
+          },
+          {
+            name: '总数',
+            data: sevenVisitCount
+          }
+        ], true)
+      }
+      if (this.$refs.count) {
+        this.$refs.count.updateOptions({
+          xaxis: {
+            categories: dateArr
+          },
+          title: {
+            text: '近七日系统访问记录',
+            align: 'left'
+          }
+        }, true, true)
+      }
       this.homeData()
     }).catch((r) => {
       console.error(r)

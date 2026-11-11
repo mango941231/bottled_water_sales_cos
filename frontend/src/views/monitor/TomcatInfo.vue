@@ -1,6 +1,8 @@
 <template>
   <a-skeleton active :loading="loading" :paragraph="{rows: 17}">
     <div class="jvm-info">
+    <a-alert v-if="metricError" type="error" :message="metricError" show-icon />
+    <a-alert v-if="unavailableMetrics.length" type="warning" :message="'当前运行环境未提供部分指标：' + unavailableMetrics.join('、')" show-icon />
       <div class="alert">
         <a-alert type="success" :show-icon="true">
           <div slot="message">
@@ -90,7 +92,7 @@
   </a-skeleton>
 </template>
 <script>
-import axios from 'axios'
+import {getMetrics} from '@/utils/monitorMetrics'
 import moment from 'moment'
 moment.locale('zh-cn')
 
@@ -99,6 +101,8 @@ export default {
     return {
       time: '',
       loading: true,
+      metricError: '',
+      unavailableMetrics: [],
       tomcat: {
         sessions: {
           created: 0,
@@ -137,20 +141,23 @@ export default {
   methods: {
     create () {
       this.time = moment().format('YYYY年MM月DD日 HH时mm分ss秒')
-      axios.all([
-        this.$get('actuator/metrics/tomcat.sessions.created'),
-        this.$get('actuator/metrics/tomcat.sessions.expired'),
-        this.$get('actuator/metrics/tomcat.sessions.active.current'),
-        this.$get('actuator/metrics/tomcat.sessions.active.max'),
-        this.$get('actuator/metrics/tomcat.sessions.rejected'),
-        this.$get('actuator/metrics/tomcat.global.sent'),
-        this.$get('actuator/metrics/tomcat.global.request.max'),
-        this.$get('actuator/metrics/tomcat.global.request'),
-        this.$get('actuator/metrics/tomcat.servlet.request'),
-        this.$get('actuator/metrics/tomcat.servlet.request.max'),
-        this.$get('actuator/metrics/tomcat.threads.current'),
-        this.$get('actuator/metrics/tomcat.threads.config.max')
+      this.metricError = ''
+      this.loading = true
+      getMetrics(this.$get, [
+        'tomcat.sessions.created',
+        'tomcat.sessions.expired',
+        'tomcat.sessions.active.current',
+        'tomcat.sessions.active.max',
+        'tomcat.sessions.rejected',
+        'tomcat.global.sent',
+        'tomcat.global.request.max',
+        'tomcat.global.request',
+        'tomcat.servlet.request',
+        'tomcat.servlet.request.max',
+        'tomcat.threads.current',
+        'tomcat.threads.config.max'
       ]).then((r) => {
+        this.unavailableMetrics = r.filter(item => item.data.unavailable).map(item => item.data.name)
         this.tomcat.sessions.created = r[0].data.measurements[0].value
         this.tomcat.sessions.expired = r[1].data.measurements[0].value
         this.tomcat.sessions.active.current = r[2].data.measurements[0].value
@@ -167,6 +174,8 @@ export default {
         this.tomcat.threads.configMax = r[11].data.measurements[0].value
         this.loading = false
       }).catch((r) => {
+        this.loading = false
+        this.metricError = '无法获取监控指标，请检查权限或稍后重试'
         console.error(r)
         this.$message.error('获取Tomcat信息失败')
       })

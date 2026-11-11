@@ -95,5 +95,6 @@ nginx.write_text('''server {
     access_log /www/wwwlogs/febs.log;
     error_log /www/wwwlogs/febs.error.log;
 }
-''')
+'''.replace('root /myproject/bottled_water_sales_cos/frontend/dist;',
+            f'root {repo / "frontend/dist"};'))
 print('Configured /febs on Tomcat 8233; secrets remain in /etc/febs/runtime.env')

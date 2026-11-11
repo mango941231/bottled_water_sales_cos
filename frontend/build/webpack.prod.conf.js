@@ -37,7 +37,10 @@ const webpackConfig = merge(baseWebpackConfig, {
     new UglifyJsPlugin({
       uglifyOptions: {
         compress: {
-          warnings: false
+          warnings: false,
+          // Uglify-ES can capture a shadowed webpack require when inlining route factories.
+          inline: false,
+          reduce_funcs: false
         }
       },
       sourceMap: config.build.productionSourceMap,

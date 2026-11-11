@@ -46,12 +46,12 @@ logging:
   # 日志输出到 Tomcat 日志目录
   path: ${LOG_PATH:/var/log/febs}
 
-# Expose only the basic health status in production.
+# Health is public; metric details remain protected by JWT and menu permissions.
 management:
   endpoints:
     web:
       exposure:
-        include: ['health']
+        include: ['health', 'metrics']
   endpoint:
     health:
       show-details: never

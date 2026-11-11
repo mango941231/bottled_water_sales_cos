@@ -1,6 +1,8 @@
 <template>
   <a-skeleton active :loading="loading" :paragraph="{rows: 17}">
   <div class="jvm-info">
+    <a-alert v-if="metricError" type="error" :message="metricError" show-icon />
+    <a-alert v-if="unavailableMetrics.length" type="warning" :message="'当前运行环境未提供部分指标：' + unavailableMetrics.join('、')" show-icon />
     <div class="alert">
       <a-alert type="success" :show-icon="true">
         <div slot="message">
@@ -100,7 +102,7 @@
   </a-skeleton>
 </template>
 <script>
-import axios from 'axios'
+import {getMetrics} from '@/utils/monitorMetrics'
 import moment from 'moment'
 moment.locale('zh-cn')
 
@@ -109,6 +111,8 @@ export default {
     return {
       time: '',
       loading: true,
+      metricError: '',
+      unavailableMetrics: [],
       jvm: {
         memory: {
           max: 0,
@@ -151,23 +155,26 @@ export default {
   methods: {
     create () {
       this.time = moment().format('YYYY年MM月DD日 HH时mm分ss秒')
-      axios.all([
-        this.$get('actuator/metrics/jvm.memory.max'),
-        this.$get('actuator/metrics/jvm.memory.committed'),
-        this.$get('actuator/metrics/jvm.memory.used'),
-        this.$get('actuator/metrics/jvm.buffer.memory.used'),
-        this.$get('actuator/metrics/jvm.buffer.count'),
-        this.$get('actuator/metrics/jvm.threads.daemon'),
-        this.$get('actuator/metrics/jvm.threads.live'),
-        this.$get('actuator/metrics/jvm.threads.peak'),
-        this.$get('actuator/metrics/jvm.classes.loaded'),
-        this.$get('actuator/metrics/jvm.classes.unloaded'),
-        this.$get('actuator/metrics/jvm.gc.memory.allocated'),
-        this.$get('actuator/metrics/jvm.gc.memory.promoted'),
-        this.$get('actuator/metrics/jvm.gc.max.data.size'),
-        this.$get('actuator/metrics/jvm.gc.live.data.size'),
-        this.$get('actuator/metrics/jvm.gc.pause')
+      this.metricError = ''
+      this.loading = true
+      getMetrics(this.$get, [
+        'jvm.memory.max',
+        'jvm.memory.committed',
+        'jvm.memory.used',
+        'jvm.buffer.memory.used',
+        'jvm.buffer.count',
+        'jvm.threads.daemon',
+        'jvm.threads.live',
+        'jvm.threads.peak',
+        'jvm.classes.loaded',
+        'jvm.classes.unloaded',
+        'jvm.gc.memory.allocated',
+        'jvm.gc.memory.promoted',
+        'jvm.gc.max.data.size',
+        'jvm.gc.live.data.size',
+        'jvm.gc.pause'
       ]).then((r) => {
+        this.unavailableMetrics = r.filter(item => item.data.unavailable).map(item => item.data.name)
         this.jvm.memory.max = this.convert(r[0].data.measurements[0].value)
         this.jvm.memory.committed = this.convert(r[1].data.measurements[0].value)
         this.jvm.memory.used = this.convert(r[2].data.measurements[0].value)
@@ -186,11 +193,14 @@ export default {
         this.jvm.gc.pause.totalTime = r[14].data.measurements[1].value
         this.loading = false
       }).catch((r) => {
+        this.loading = false
+        this.metricError = '无法获取监控指标，请检查权限或稍后重试'
         console.error(r)
         this.$message.error('获取JVM信息失败')
       })
     },
     convert (value) {
+      if (typeof value !== 'number') return '-'
       return Number(value / 1048576).toFixed(3)
     }
   }
