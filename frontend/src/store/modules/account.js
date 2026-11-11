@@ -1,5 +1,14 @@
 import db from 'utils/localstorage'
 
+// Discard sessions and menus left by the removed development login bypass.
+const cachedRoutes = db.get('USER_ROUTER', [])
+if (db.get('DEV_MOCK_SESSION', false) ||
+    db.get('USER_TOKEN', '') === 'dev-mock-token' ||
+    (Array.isArray(cachedRoutes) && cachedRoutes.some(route => route.__mock))) {
+  ['USER_TOKEN', 'EXPIRE_TIME', 'USER', 'PERMISSIONS', 'ROLES', 'USER_ROUTER', 'DEV_MOCK_SESSION']
+    .forEach(key => db.remove(key))
+}
+
 export default {
   namespaced: true,
   state: {

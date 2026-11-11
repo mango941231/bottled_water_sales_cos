@@ -7,7 +7,6 @@ import EmptyPageView from '@/views/common/EmptyPageView'
 import HomePageView from '@/views/HomePage'
 import db from 'utils/localstorage'
 import request from 'utils/request'
-import { SKIP_LOGIN, ensureLogin } from 'utils/devAuth'
 
 Vue.use(Router)
 
@@ -38,15 +37,6 @@ router.beforeEach((to, from, next) => {
     next()
     return
   }
-  // 临时关闭登录：静默登录（后端不可用时自动退化为模拟登录态）后再放行
-  if (SKIP_LOGIN) {
-    ensureLogin().then(() => {
-      auth(to, next)
-    }).catch(() => {
-      next('/login')
-    })
-    return
-  }
   auth(to, next)
 })
 
@@ -54,7 +44,7 @@ function auth (to, next) {
   let token = db.get('USER_TOKEN')
   let user = db.get('USER')
   let userRouter = get('USER_ROUTER')
-  if (token.length && user) {
+  if (typeof token === 'string' && token.length && user && user.username) {
     if (!asyncRouter) {
       if (!userRouter) {
         request.get(`menu/${user.username}`).then((res) => {
