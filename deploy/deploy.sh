@@ -47,7 +47,9 @@ rollback() {
   "$SERVICE" start 9>&- || true
   "$NGINX" -t && "$NGINX" -s reload || true
 }
-"$SERVICE" stop 9>&-
+if [ -f "$TOMCAT_HOME/logs/catalina-daemon.pid" ]; then
+  "$SERVICE" stop 9>&-
+fi
 trap rollback ERR
 python3 "$REPO_DIR/deploy/configure-baota.py"
 "$NGINX" -t
