@@ -5,6 +5,7 @@ REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 export TOMCAT_HOME="${TOMCAT_HOME:-/usr/local/bttomcat/tomcat9}"
 export TOOLS_DIR="${TOOLS_DIR:-/opt/febs-tools}"
 export DEPLOY_BACKUP="/var/backups/febs/$(date +%Y%m%d%H%M%S)"
+export SERVICE_START_WAIT_TIME=120
 SERVICE=/etc/init.d/bttomcat9
 NGINX=/www/server/nginx/sbin/nginx
 APP_BASE=/var/lib/febs/webapps

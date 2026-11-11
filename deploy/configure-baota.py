@@ -42,6 +42,7 @@ if setenv.exists():
 setenv.write_text('#!/bin/sh\n. /etc/febs/runtime.env\n'
                   f'export JAVA_HOME="{tools}/jdk8"\n'
                   'export SPRING_PROFILES_ACTIVE=prod\n'
+                  'export SERVICE_START_WAIT_TIME=120\n'
                   'export JAVA_OPTS="-Xms256m -Xmx1024m -Xss512k -Dfile.encoding=UTF-8 -Djava.awt.headless=true"\n')
 setenv.chmod(0o700)
 
