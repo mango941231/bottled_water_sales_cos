@@ -29,7 +29,7 @@ if [ -f "$APP_BASE/febs.war" ]; then
 fi
 rollback() {
   echo "Deployment failed; restoring backup: $DEPLOY_BACKUP" >&2
-  "$SERVICE" stop || true
+  "$SERVICE" stop 9>&- || true
   for item in server.xml setenv.sh; do
     case "$item" in
       server.xml) destination="$TOMCAT_HOME/conf/server.xml" ;;
@@ -44,16 +44,16 @@ rollback() {
   if [ -d "$APP_BASE/febs" ]; then mv "$APP_BASE/febs" "$DEPLOY_BACKUP/failed-expanded"; fi
   if [ -f "$DEPLOY_BACKUP/febs.war" ]; then cp -p "$DEPLOY_BACKUP/febs.war" "$APP_BASE/febs.war"; fi
   if [ -d "$DEPLOY_BACKUP/expanded" ]; then mv "$DEPLOY_BACKUP/expanded" "$APP_BASE/febs"; fi
-  "$SERVICE" start || true
+  "$SERVICE" start 9>&- || true
   "$NGINX" -t && "$NGINX" -s reload || true
 }
-"$SERVICE" stop
+"$SERVICE" stop 9>&-
 trap rollback ERR
 python3 "$REPO_DIR/deploy/configure-baota.py"
 "$NGINX" -t
 if [ -d "$APP_BASE/febs" ]; then mv "$APP_BASE/febs" "$DEPLOY_BACKUP/expanded"; fi
 install -o www -g www -m 644 target/febs.war "$APP_BASE/febs.war"
-"$SERVICE" start
+"$SERVICE" start 9>&-
 healthy=false
 for attempt in $(seq 1 60); do
   if curl -fsS --max-time 5 http://127.0.0.1:8233/febs/actuator/health > "$DEPLOY_BACKUP/health.json" 2>/dev/null; then
