@@ -40,8 +40,18 @@ spring:
 febs:
   # 图片/文件上传目录，生产环境必须使用绝对路径，
   # 否则 Tomcat 切换工作目录后历史文件会丢失
-  uploadPath: ${UPLOAD_PATH:/opt/tomcat9/webapps/febs/upload}
+  uploadPath: ${UPLOAD_PATH:/var/lib/febs/upload}
 
 logging:
   # 日志输出到 Tomcat 日志目录
-  path: ${LOG_PATH:/opt/tomcat9/logs}
+  path: ${LOG_PATH:/var/log/febs}
+
+# Expose only the basic health status in production.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ['health']
+  endpoint:
+    health:
+      show-details: never

@@ -2,7 +2,6 @@ package cc.mrbird.febs.cos.controller;
 
 import cc.mrbird.febs.common.annotation.Log;
 import cc.mrbird.febs.common.utils.FileUtil;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,7 +11,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Controller
 @RequestMapping("/file")
-@AllArgsConstructor
 public class FileController {
 
     /**

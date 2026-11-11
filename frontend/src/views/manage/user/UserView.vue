@@ -13,7 +13,7 @@
               <a-card-meta :title="item.shopName + '的店铺'" :description="item.name">
                 <a-avatars
                   slot="avatar"
-                  :src="'http://127.0.0.1:9527/imagesWeb/' + item.shopAvatar"
+                  :src="'/febs/imagesWeb/' + item.shopAvatar"
                 />
               </a-card-meta>
               <div style="margin-left: 45px;margin-top: 20px">

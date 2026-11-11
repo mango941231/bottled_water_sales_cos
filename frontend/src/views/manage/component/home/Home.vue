@@ -11,7 +11,7 @@
 <!--              <a slot="title" href="https://www.antdv.com/">{{ item.title }}</a>-->
 <!--              <a-avatar-->
 <!--                slot="avatar"-->
-<!--                :src="'http://127.0.0.1:9527/imagesWeb/' + student.images"-->
+<!--                :src="'/febs/imagesWeb/' + student.images"-->
 <!--              />-->
 <!--            </a-list-item-meta>-->
 <!--          </a-list-item>-->

@@ -47,7 +47,7 @@
         <a-col :span="24">
           <a-upload
             name="avatar"
-            action="http://127.0.0.1:9527/file/fileUpload/"
+            action="/febs/file/fileUpload/"
             list-type="picture-card"
             disabled
             :file-list="fileList"
@@ -134,7 +134,7 @@ export default {
       if (images !== null && images !== '') {
         let imageList = []
         images.split(',').forEach((image, index) => {
-          imageList.push({uid: index, name: image, status: 'done', url: 'http://127.0.0.1:9527/imagesWeb/' + image})
+          imageList.push({uid: index, name: image, status: 'done', url: '/febs/imagesWeb/' + image})
         })
         this.fileList = imageList
       }

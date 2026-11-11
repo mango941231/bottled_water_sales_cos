@@ -308,7 +308,7 @@ export default {
         pagination.total = data.total
         data.records.forEach(item => {
           if (item.avatar && !item.avatar.includes('http')) {
-            item.avatar = 'http://127.0.0.1:9527/imagesWeb/' + item.avatar
+            item.avatar = '/febs/imagesWeb/' + item.avatar
           }
         })
         this.dataSource = data.records
