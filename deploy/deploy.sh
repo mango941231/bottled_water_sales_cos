@@ -1,86 +1,75 @@
 #!/usr/bin/env bash
-#
-# 桶装水销售配送系统 - Tomcat 部署脚本（服务器端执行）
-#
-# 用法：
-#   scp backend/target/febs.war root@服务器IP:/tmp/
-#   ssh root@服务器IP 'bash /tmp/deploy.sh'
-#
-# 可通过环境变量覆盖默认值：
-#   TOMCAT_HOME=/opt/tomcat9 APP_NAME=febs bash deploy.sh
-
+# After git pull --ff-only, run this as root on the existing Baota server.
 set -euo pipefail
-
-# ---------- 配置 ----------
-TOMCAT_HOME="${TOMCAT_HOME:-/opt/tomcat9}"
-APP_NAME="${APP_NAME:-febs}"
-WAR_FILE="${WAR_FILE:-/tmp/${APP_NAME}.war}"
-UPLOAD_DIR="${UPLOAD_DIR:-/opt/tomcat9/webapps/${APP_NAME}/upload}"
-BACKUP_DIR="${BACKUP_DIR:-/opt/tomcat9/backup}"
-
-echo "==> Tomcat:    ${TOMCAT_HOME}"
-echo "==> 应用名:    ${APP_NAME}"
-echo "==> war 文件:  ${WAR_FILE}"
-
-# ---------- 检查环境 ----------
-if [ ! -d "${TOMCAT_HOME}" ]; then
-    echo "[错误] Tomcat 目录不存在: ${TOMCAT_HOME}" >&2
-    exit 1
+REPO_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+export TOMCAT_HOME="${TOMCAT_HOME:-/usr/local/bttomcat/tomcat9}"
+export TOOLS_DIR="${TOOLS_DIR:-/opt/febs-tools}"
+export DEPLOY_BACKUP="/var/backups/febs/$(date +%Y%m%d%H%M%S)"
+SERVICE=/etc/init.d/bttomcat9
+NGINX=/www/server/nginx/sbin/nginx
+APP_BASE=/var/lib/febs/webapps
+[ "$(id -u)" = 0 ] || { echo 'Run as root'; exit 1; }
+[ -x "$SERVICE" ] && [ -f "$TOMCAT_HOME/conf/server.xml" ] || { echo 'Expected Baota Tomcat9 not found'; exit 1; }
+exec 9>/var/lock/febs-deploy.lock
+flock -n 9 || { echo 'Another deployment is running'; exit 1; }
+bash "$REPO_DIR/deploy/bootstrap-tools.sh"
+export JAVA_HOME="$TOOLS_DIR/jdk8"
+export PATH="$JAVA_HOME/bin:$TOOLS_DIR/apache-maven-3.9.9/bin:$PATH"
+# Build and test before interrupting the running service.
+cd "$REPO_DIR/backend"
+mvn -B clean verify
+[ -s target/febs.war ]
+[ -f "$REPO_DIR/frontend/dist/index.html" ] || { echo 'Build frontend/dist before deploying'; exit 1; }
+mkdir -p "$DEPLOY_BACKUP"
+chmod 700 "$DEPLOY_BACKUP"
+# Save the existing application for rollback, including the expanded directory.
+if [ -f "$APP_BASE/febs.war" ]; then
+  cp -p "$APP_BASE/febs.war" "$DEPLOY_BACKUP/febs.war"
 fi
-
-if [ ! -f "${WAR_FILE}" ]; then
-    echo "[错误] war 文件不存在: ${WAR_FILE}" >&2
-    exit 1
+rollback() {
+  echo "Deployment failed; restoring backup: $DEPLOY_BACKUP" >&2
+  "$SERVICE" stop || true
+  for item in server.xml setenv.sh; do
+    case "$item" in
+      server.xml) destination="$TOMCAT_HOME/conf/server.xml" ;;
+      setenv.sh) destination="$TOMCAT_HOME/bin/setenv.sh" ;;
+    esac
+    [ ! -f "$DEPLOY_BACKUP/$item" ] || cp -p "$DEPLOY_BACKUP/$item" "$destination"
+  done
+  if [ -f "$DEPLOY_BACKUP/java_febs.conf" ]; then
+    cp -p "$DEPLOY_BACKUP/java_febs.conf" /www/server/panel/vhost/nginx/java_febs.conf
+  fi
+  if [ -f "$APP_BASE/febs.war" ]; then mv "$APP_BASE/febs.war" "$DEPLOY_BACKUP/failed.war"; fi
+  if [ -d "$APP_BASE/febs" ]; then mv "$APP_BASE/febs" "$DEPLOY_BACKUP/failed-expanded"; fi
+  if [ -f "$DEPLOY_BACKUP/febs.war" ]; then cp -p "$DEPLOY_BACKUP/febs.war" "$APP_BASE/febs.war"; fi
+  if [ -d "$DEPLOY_BACKUP/expanded" ]; then mv "$DEPLOY_BACKUP/expanded" "$APP_BASE/febs"; fi
+  "$SERVICE" start || true
+  "$NGINX" -t && "$NGINX" -s reload || true
+}
+"$SERVICE" stop
+trap rollback ERR
+python3 "$REPO_DIR/deploy/configure-baota.py"
+"$NGINX" -t
+if [ -d "$APP_BASE/febs" ]; then mv "$APP_BASE/febs" "$DEPLOY_BACKUP/expanded"; fi
+install -o www -g www -m 644 target/febs.war "$APP_BASE/febs.war"
+"$SERVICE" start
+healthy=false
+for attempt in $(seq 1 60); do
+  if curl -fsS --max-time 5 http://127.0.0.1:8233/febs/actuator/health > "$DEPLOY_BACKUP/health.json" 2>/dev/null; then
+    if python3 -c 'import json,sys; sys.exit(json.load(open(sys.argv[1])).get("status") != "UP")' "$DEPLOY_BACKUP/health.json"; then
+      healthy=true
+      break
+    fi
+  fi
+  sleep 2
+done
+if [ "$healthy" != true ]; then
+  echo 'Health check failed. Inspect /www/wwwlogs/neizhi9/catalina-daemon.out and /var/log/febs' >&2
+  false
 fi
-
-# 检查 Tomcat 版本，必须为 9.x（Spring Boot 2.1 基于 Servlet 4.0）
-TOMCAT_MAJOR=$("${TOMCAT_HOME}/bin/version.sh" 2>/dev/null | grep -oP 'Server version: Apache Tomcat/\K[0-9]+' || echo "")
-if [ -n "${TOMCAT_MAJOR}" ] && [ "${TOMCAT_MAJOR}" != "9" ]; then
-    echo "[警告] 当前 Tomcat 主版本为 ${TOMCAT_MAJOR}，本项目要求 Tomcat 9.x（Servlet 4.0）" >&2
-fi
-
-# ---------- 停止 Tomcat ----------
-echo "==> 停止 Tomcat..."
-"${TOMCAT_HOME}/bin/shutdown.sh" 2>/dev/null || true
-sleep 5
-# 兜底：强制结束残留进程
-pkill -f "catalina.home=${TOMCAT_HOME}" 2>/dev/null || true
-sleep 2
-
-# ---------- 备份旧版本 ----------
-if [ -f "${TOMCAT_HOME}/webapps/${APP_NAME}.war" ]; then
-    echo "==> 备份旧版本..."
-    mkdir -p "${BACKUP_DIR}"
-    cp "${TOMCAT_HOME}/webapps/${APP_NAME}.war" "${BACKUP_DIR}/${APP_NAME}.war.$(date +%Y%m%d%H%M%S)"
-fi
-
-# ---------- 清理旧的展开目录 ----------
-# 必须删除，否则残留的旧 class 文件会覆盖新版本，导致"改了代码不生效"
-echo "==> 清理旧部署目录..."
-rm -rf "${TOMCAT_HOME}/webapps/${APP_NAME}"
-rm -f  "${TOMCAT_HOME}/webapps/${APP_NAME}.war"
-
-# ---------- 部署新版本 ----------
-echo "==> 部署新版本..."
-cp "${WAR_FILE}" "${TOMCAT_HOME}/webapps/${APP_NAME}.war"
-
-# ---------- 创建上传目录 ----------
-mkdir -p "${UPLOAD_DIR}"
-chmod 755 "${UPLOAD_DIR}"
-
-# ---------- 启动 Tomcat ----------
-echo "==> 启动 Tomcat..."
-"${TOMCAT_HOME}/bin/startup.sh"
-
-sleep 10
-
-# ---------- 健康检查 ----------
-HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:8080/${APP_NAME}/actuator/health" || echo "000")
-if [ "${HTTP_CODE}" = "200" ]; then
-    echo "==> 部署成功，健康检查通过 (HTTP ${HTTP_CODE})"
-    echo "==> 访问地址: http://<服务器IP>:8080/${APP_NAME}/"
-else
-    echo "[警告] 健康检查返回 HTTP ${HTTP_CODE}，请查看日志: ${TOMCAT_HOME}/logs/catalina.out" >&2
-fi
-
-echo "==> 日志目录: ${TOMCAT_HOME}/logs"
+"$NGINX" -s reload
+curl -fsS --max-time 10 -H 'Host: 81.68.239.216' http://127.0.0.1/febs/actuator/health
+trap - ERR
+printf '\nDeployment successful. Revision: '
+git -C "$REPO_DIR" rev-parse --short HEAD
+printf 'Backup: %s\n' "$DEPLOY_BACKUP"

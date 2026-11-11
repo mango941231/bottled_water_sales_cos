@@ -25,5 +25,5 @@ export REDIS_PORT="6379"
 export REDIS_PASSWORD=""
 
 # 文件上传目录与日志目录（必须使用绝对路径）
-export UPLOAD_PATH="/opt/tomcat9/webapps/febs/upload"
-export LOG_PATH="/opt/tomcat9/logs"
+export UPLOAD_PATH="/var/lib/febs/upload"
+export LOG_PATH="/var/log/febs"

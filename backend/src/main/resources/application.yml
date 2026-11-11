@@ -72,7 +72,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: ['httptrace', 'metrics']
+        include: ['health', 'httptrace', 'metrics']
 
 
 febs:
@@ -87,6 +87,6 @@ febs:
         num: 1000
   shiro:
     # 后端免认证接口 url
-    anonUrl: /login,/logout/**,/regist,/user/check/**,/web/**,/static/**,/inter/**,/file/**,/api/**,/imagesWeb/**
+    anonUrl: /actuator/health,/login,/logout/**,/regist,/user/check/**,/web/**,/static/**,/inter/**,/file/**,/api/**,/imagesWeb/**
     # token有效期，单位秒
     jwtTimeOut: 3600

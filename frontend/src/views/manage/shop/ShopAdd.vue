@@ -38,7 +38,7 @@
           <a-form-item label='照片' v-bind="formItemLayout">
             <a-upload
               name="avatar"
-              action="http://127.0.0.1:9527/file/fileUpload/"
+              action="/febs/file/fileUpload/"
               list-type="picture-card"
               :file-list="fileList"
               @preview="handlePreview"

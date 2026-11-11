@@ -33,9 +33,11 @@ public class JWTFilter extends BasicHttpAuthenticationFilter {
         FebsProperties febsProperties = SpringContextUtil.getBean(FebsProperties.class);
         String[] anonUrl = StringUtils.splitByWholeSeparatorPreserveAllTokens(febsProperties.getShiro().getAnonUrl(), StringPool.COMMA);
 
+        // Match paths within the application, excluding the external Tomcat context (/febs).
+        String requestPath = WebUtils.getPathWithinApplication(httpServletRequest);
         boolean match = false;
         for (String u : anonUrl) {
-            if (pathMatcher.match(u, httpServletRequest.getRequestURI()))
+            if (pathMatcher.match(u, requestPath))
                 match = true;
         }
         if (match) return true;
