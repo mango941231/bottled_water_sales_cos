@@ -1,7 +1,8 @@
 /**
  * 请求相关的封装
  */
-let baseUrl = "http://127.0.0.1:9527/api/"; // 接口地址
+const config = require('../config');
+let baseUrl = config.API_BASE_URL; // 接口地址
 let header = {
   'content-type': 'application/x-www-form-urlencoded',
   'content-type': 'application/json;charset=utf-8',
@@ -27,21 +28,25 @@ function fetch(options) {
         if (options.loading) {
           wx.hideLoading()
         }
-       
-        if (res.data.code == 1) {
+        const payload = res.data || {}
+        if (payload.code == 1) {
           // 重新登陆
-          return false;
+          const error = new Error(payload.message || payload.msg || '登录状态已失效')
+          reject(error)
+          return
         }
-        if (res.data.code != 0) {
+        if (payload.code != 0) {
+          const message = payload.message || payload.msg || res.errMsg || '请求失败'
           wx.showToast({
-            title: res.errMsg,
+            title: message,
             mask: "true",
             icon: 'none',
             duration: 10000
           })
+          reject(new Error(message))
           return;
         }
-        resolve(res.data); //把请求到的数据发到引用请求的地方
+        resolve(payload); //把请求到的数据发到引用请求的地方
       },
       fail: function(err) {
         if (options.loading) {
@@ -52,6 +57,7 @@ function fetch(options) {
           icon: 'none',
           duration: 3000,
         })
+        reject(err)
       }
     })
   })

@@ -1,4 +1,6 @@
 //app.js
+const config = require('./config');
+
 App({
     onLaunch: function () {
         wx.getSystemInfo({
@@ -16,7 +18,10 @@ App({
         })
     },
     globalData: {
-        userInfo: null
+        userInfo: null,
+        serverOrigin: config.SERVER_ORIGIN,
+        imageBaseUrl: config.IMAGE_BASE_URL,
+        uploadUrl: config.UPLOAD_URL
     }
 });
 

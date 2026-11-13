@@ -3,6 +3,7 @@ let http = require('../../../utils/request')
 Page({
     data: {
         StatusBar: app.globalData.StatusBar + 6,
+        imageBaseUrl: app.globalData.imageBaseUrl,
         TabbarBot: app.globalData.tabbar_bottom,
         TabCur: 0,scrollLeft:0,
         SortMenu: [{id:0,name:"综合"},{id:1,name:"销量"},{id:2,name:"新品"},{id:3,name:"价格"}],

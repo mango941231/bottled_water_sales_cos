@@ -38,7 +38,7 @@ Page({
       }
       let fileList = []
       r.data.images.split(',').forEach(item => {
-        fileList.push({type: 'image', url: item, thumb: 'http://127.0.0.1:9527/imagesWeb/'+item})
+        fileList.push({type: 'image', url: item, thumb: app.globalData.imageBaseUrl + item})
       });
       this.setData({
         name: r.data.name,
@@ -168,7 +168,7 @@ Page({
     let that = this
     // 当设置 mutiple 为 true 时, file 为数组格式，否则为对象格式
     wx.uploadFile({
-      url: 'http://127.0.0.1:9527/file/fileUpload', // 仅为示例，非真实的接口地址
+      url: app.globalData.uploadUrl,
       filePath: file.url,
       name: 'avatar',
       success(res) {

@@ -20,7 +20,7 @@
             <view class="cu-item shadow" wx:for="{{postList}}" bindtap='postDetail' data-postId='{{item.id}}'>
                 <view class="image">
                     <!-- mode="widthFix" -->
-                    <image src="http://127.0.0.1:9527/imagesWeb/{{item.image}}" style="height: 150px"></image>
+                    <image src="{{imageBaseUrl}}{{item.image}}" style="height: 150px"></image>
                     <view class="cu-tag bg-blue">热度 {{item.replyNum}}</view>
                     <view class="cu-bar bg-shadeBottom">
                         <text class="text-cut">

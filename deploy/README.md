@@ -18,18 +18,9 @@ Java 8 和 Maven 安装在 `/opt/febs-tools`，不修改系统默认 Java。
 本机仓库根目录：
 
 ```powershell
-cd backend
-mvn clean verify
-cd ..
-# 如修改了前端，构建后把 dist 一并提交；当前仓库跟踪 dist。
-cd frontend
-$env:NODE_OPTIONS='--openssl-legacy-provider'
-npm ci
-npm run build
-cd ..
-git add <本次修改的文件>
-git commit -m "说明修改内容"
-git push origin main
+cd /myproject/bottled_water_sales_cos
+git pull --ff-only origin main
+bash deploy/deploy.sh
 ```
 
 `NODE_OPTIONS` 仅用于此旧版 Webpack 与较新 Node 的兼容。未修改前端时可跳过前端构建。

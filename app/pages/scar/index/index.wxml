@@ -24,7 +24,7 @@
                 <view class="cu-list menu menu-avatar">
                     <view class="cu-item">
                         <view class="canui-goods" style="width: 100%">
-                            <view class="cu-avatar radius lg" style="background-image:url(http://127.0.0.1:9527/imagesWeb/{{ item.image }});"></view>
+                            <view class="cu-avatar radius lg" style="background-image:url({{imageBaseUrl}}{{ item.image }});"></view>
                             <view class='content' style="padding-left: 40px">
                                 <view class='canui-xzwz'>{{ item.name }}</view>
                                 <view class='canui-tool'>

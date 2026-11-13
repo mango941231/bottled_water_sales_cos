@@ -22,7 +22,7 @@
                     <view class="cu-item shadow" wx:if="{{ item.id == TabCur }}">
                         <view style="font-size: 14px;padding: 20px;text-indent: 20px;">{{ item.content }}</view>
                         <view class="grid flex-sub padding-lr col-1 grid-square" wx:for="{{ item.imagesList }}">
-                            <view class="bg-img only-img" style="background-image:url(http://127.0.0.1:9527/imagesWeb/{{ item }});"></view>
+                            <view class="bg-img only-img" style="background-image:url({{imageBaseUrl}}{{ item }});"></view>
                         </view>
                         <view class="text-gray text-sm text-right padding">
                             <text class="cuIcon-attentionfill margin-lr-xs"></text>

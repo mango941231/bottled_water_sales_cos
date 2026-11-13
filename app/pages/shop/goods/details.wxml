@@ -1,7 +1,7 @@
 <!-- 商品轮播图 -->
 <swiper class="screen-swiper square-dot bg-white" indicator-dots="true" circular="true" autoplay="true" interval="5000" duration="500">
     <swiper-item wx:for="{{swiperlist}}" wx:key="index">
-        <image src="http://127.0.0.1:9527/imagesWeb/{{item}}" mode='aspectFill'></image>
+        <image src="{{imageBaseUrl}}{{item}}" mode='aspectFill'></image>
     </swiper-item>
 </swiper>
 <!-- 左上角按钮 -->

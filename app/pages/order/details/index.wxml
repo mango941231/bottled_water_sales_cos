@@ -47,7 +47,7 @@
                 </view>
                 <view class="cu-list menu menu-avatar">
                     <navigator open-type="navigate" class="cu-item" hover-class='none' url="/pages/shop/goods/details?commoditId={{ orderInfo.id }}">
-                        <view class="cu-avatar radius lg" style="background-image:url(http://127.0.0.1:9527/imagesWeb/{{ orderInfo.image }});"></view>
+                        <view class="cu-avatar radius lg" style="background-image:url({{imageBaseUrl}}{{ orderInfo.image }});"></view>
                         <view class='content canui-xzwz tow'>{{ orderInfo.name }}</view>
                         <view class='action'>
                             <view class='text-price'>{{ orderInfo.price }}</view>

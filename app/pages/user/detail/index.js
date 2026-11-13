@@ -68,10 +68,10 @@ Page({
     http.get('getMessageDetail', { takeUser, sendUser, userId: this.data.userInfo.id }).then((r) => {
       r.data.forEach(item => {
         if (item.sendUserAvatar && !item.sendUserAvatar.includes('http')) {
-          item.sendUserAvatar = 'http://127.0.0.1:9527/imagesWeb/' + item.sendUserAvatar
+          item.sendUserAvatar = app.globalData.imageBaseUrl + item.sendUserAvatar
         }
         if (item.takeUserAvatar && !item.takeUserAvatar.includes('http')) {
-          item.takeUserAvatar = 'http://127.0.0.1:9527/imagesWeb/' + item.takeUserAvatar
+          item.takeUserAvatar = app.globalData.imageBaseUrl + item.takeUserAvatar
         }
       })
       this.setData({ replyInfo: r.data })

@@ -3,6 +3,7 @@ let http = require('../../../utils/request')
 Page({
     data: {
         StatusBar: app.globalData.StatusBar,
+        imageBaseUrl: app.globalData.imageBaseUrl,
         CustomBar: app.globalData.CustomBar,
         TabbarBot: app.globalData.tabbar_bottom,
         TabCur: 0,scrollLeft:0,

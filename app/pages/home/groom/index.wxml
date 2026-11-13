@@ -14,7 +14,7 @@
             <view class="cu-item shadow margin-top">
                 <view class="cu-list menu menu-avatar">
                     <view class="cu-item">
-                        <view class="cu-avatar radius lg" style="background-image:url(http://127.0.0.1:9527/imagesWeb/{{ item.avatar }});"></view>
+                        <view class="cu-avatar radius lg" style="background-image:url({{imageBaseUrl}}{{ item.avatar }});"></view>
                         <view class='content'>
                             <view class='text-black canui-xzwz' style="font-size: 13px">{{ item.userName }}</view>
                             <view class='text-gray text-sm canui-xzwz'> {{ item.introduction }}</view>
@@ -27,7 +27,7 @@
                     <view class="canui-duotu">
                         <view class="canui-dtimg-a" wx:if="{{ item.goods[0] != undefined }}">
                             <view class="canui-dtimg-content">
-                                <image src="http://127.0.0.1:9527/imagesWeb/{{ item.goods[0].image }}" mode="aspectFill"></image>
+                                <image src="{{imageBaseUrl}}{{ item.goods[0].image }}" mode="aspectFill"></image>
                                 <view class="text-sm canui-dtimg-text">
                                     <view class="text-white canui-xzwz">{{ item.goods[0].name }}</view>
                                     <view class="text-price text-red">{{ item.goods[0].price }}</view>
@@ -37,7 +37,7 @@
                         <view class="canui-dtimg-b">
                             <view class="canui-dtimg-ba" wx:if="{{ item.goods[1] != undefined }}">
                                 <view class="canui-dtimg-content">
-                                    <image src="http://127.0.0.1:9527/imagesWeb/{{ item.goods[1].image }}" mode="aspectFill"></image>
+                                <image src="{{imageBaseUrl}}{{ item.goods[1].image }}" mode="aspectFill"></image>
                                     <view class="text-sm canui-dtimg-text">
                                         <view class="text-white canui-xzwz">{{ item.goods[1].name }}</view>
                                         <view class="text-price text-red">{{ item.goods[1].price }}</view>
@@ -46,7 +46,7 @@
                             </view>
                             <view class="canui-dtimg-bb" wx:if="{{ item.goods[2] != undefined }}">
                                 <view class="canui-dtimg-content">
-                                    <image src="http://127.0.0.1:9527/imagesWeb/{{ item.goods[2].image }}" mode="aspectFill"></image>
+                                <image src="{{imageBaseUrl}}{{ item.goods[2].image }}" mode="aspectFill"></image>
                                     <view class="text-sm canui-dtimg-text">
                                         <view class="text-white canui-xzwz">{{ item.goods[2].name }}</view>
                                         <view class="text-price text-red">{{ item.goods[2].price }}</view>

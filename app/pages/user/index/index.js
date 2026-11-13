@@ -63,45 +63,48 @@ Page({
     wx.showLoading({
       title: '正在登录...',
     })
-    var that = this;
     wx.getUserProfile({
       desc: '用于完善会员资料', // 声明获取用户个人信息后的用途，后续会展示在弹窗中，请谨慎填写
-      success: (res) => {
-        wx.login({
-          success(ress) {
-            if (ress.code) {
-              http.post('userAdd', {
-                userName: res.userInfo.nickName,
-                avatar: res.userInfo.avatarUrl,
-                sex: res.userInfo.gender == 0 ? 1 : 2,
-                openId: ress.code
-              }).then((res) => {
-                that.setData({
-                  userInfo: res.data,
-                  hasUserInfo: true
-                })
-                // 可以将 res 发送给后台解码出 unionId
-                app.globalData.userInfo = res.data
-                wx.setStorage({
-                  key: 'userInfo',
-                  data: res.data,
-                  success: function () {
-                    console.log("成功！")
-                  }, fail: function () {
-                    console.log("失败！")
-                  }
-                })
-                wx.hideLoading()
-              })
-              if (app.userInfoReadyCallback) {
-                app.userInfoReadyCallback(res)
-              }
-              that.initLoginMsg();
-            } else {
-              console.log('登录失败！' + res.errMsg)
-            }
+      success: (res) => this.loginWithProfile(res.userInfo),
+      fail: (err) => {
+        wx.hideLoading()
+        wx.showToast({ title: err.errMsg || '用户授权失败', icon: 'none' })
+      }
+    })
+  },
+  loginWithProfile(userInfo) {
+    wx.login({
+      success: (loginResult) => {
+        if (!loginResult.code) {
+          wx.hideLoading()
+          wx.showToast({ title: loginResult.errMsg || '微信登录失败', icon: 'none' })
+          return
+        }
+        http.post('userAdd', {
+          userName: userInfo.nickName,
+          avatar: userInfo.avatarUrl,
+          sex: userInfo.gender == 0 ? 1 : 2,
+          openId: loginResult.code
+        }).then((result) => {
+          this.setData({
+            userInfo: result.data,
+            hasUserInfo: true
+          })
+          app.globalData.userInfo = result.data
+          wx.setStorage({ key: 'userInfo', data: result.data })
+          if (app.userInfoReadyCallback) {
+            app.userInfoReadyCallback(result)
           }
+        }).catch((err) => {
+          console.error('小程序登录失败', err)
+          wx.showToast({ title: err.message || '登录失败，请检查小程序 AppID 和后端配置', icon: 'none' })
+        }).then(() => {
+          wx.hideLoading()
         })
+      },
+      fail: (err) => {
+        wx.hideLoading()
+        wx.showToast({ title: err.errMsg || '微信登录失败', icon: 'none' })
       }
     })
   },
@@ -116,10 +119,10 @@ Page({
   },
   getUserInfo(e) {
     // 不推荐使用getUserInfo获取用户信息，预计自2021年4月13日起，getUserInfo将不再弹出弹窗，并直接返回匿名的用户个人信息
-    this.setData({
-      userInfo: e.detail.userInfo,
-      hasUserInfo: true
-    })
+    if (e.detail.userInfo) {
+      wx.showLoading({ title: '正在登录...' })
+      this.loginWithProfile(e.detail.userInfo)
+    }
   },
   coutNum(e) {
     if (e > 1000 && e < 10000) {

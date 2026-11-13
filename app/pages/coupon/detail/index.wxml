@@ -32,7 +32,7 @@
                     </view>
                     <view class="text-content">{{postInfo.content}}</view>
                     <view class="grid flex-sub padding-lr col-3 grid-square">
-                        <view class="bg-img only-img" style="background-image:url(http://127.0.0.1:9527/imagesWeb/{{item}});" wx:for="{{imagesList}}"></view>
+                        <view class="bg-img only-img" style="background-image:url({{imageBaseUrl}}{{item}});" wx:for="{{imagesList}}"></view>
                     </view>
                     <view class="text-gray text-sm text-right padding">
                         <text class="cuIcon-attentionfill margin-lr-xs"></text>

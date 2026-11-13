@@ -28,7 +28,7 @@
 <view class="bg-white canui-goods-list" style="top:{{CustomBar + 7}}px;">
     <view class="cu-list menu menu-avatar" wx:if="{{ TabCur == 0 }}">
         <view class="cu-item " wx:for="{{ commodity }}">
-            <view class="cu-avatar radius lg" style="background-image:url(http://127.0.0.1:9527/imagesWeb/{{ item.image }});"></view>
+            <view class="cu-avatar radius lg" style="background-image:url({{imageBaseUrl}}{{ item.image }});"></view>
             <view class='content' style="padding-left: 15px">
                 <view class="canui-xzwz">{{ item.name }}</view>
                 <view class='text-red text-sm text-price'>{{ item.price }}</view>
@@ -40,7 +40,7 @@
     </view>
     <view class="cu-list menu menu-avatar" wx:if="{{ TabCur == 1 }}">
         <view class="cu-item " wx:for="{{ shop }}">
-            <view class="cu-avatar radius lg" style="background-image:url(http://127.0.0.1:9527/imagesWeb/{{ item.avatar }});"></view>
+            <view class="cu-avatar radius lg" style="background-image:url({{imageBaseUrl}}{{ item.avatar }});"></view>
             <view class='content' style="padding-left: 15px">
                 <view class="canui-xzwz">{{ item.userName }}</view>
                 <view class='text-red text-sm'>{{ item.tag }}</view>
