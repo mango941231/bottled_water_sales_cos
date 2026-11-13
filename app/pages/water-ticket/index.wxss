@@ -1,0 +1,13 @@
+page { background: #f5f6f7; }
+.cu-custom { position: absolute; top: 0; width: 100%; }
+.cu-custom .cu-bar { padding-right: inherit; background-image: linear-gradient(45deg, rgb(15, 112, 65), rgb(15, 112, 65)); }
+.box { position: absolute; top: 64px; width: 100%; min-height: calc(100vh - 64px); }
+.ticket-list { padding: 24rpx; }
+.ticket-item { margin-bottom: 20rpx; padding: 28rpx; background: #fff; border-left: 8rpx solid #39b54a; }
+.ticket-head, .ticket-foot { display: flex; align-items: center; justify-content: space-between; }
+.ticket-name { color: #20252b; font-size: 32rpx; font-weight: 600; }
+.ticket-product, .ticket-foot { margin-top: 16rpx; color: #7b838b; font-size: 24rpx; }
+.ticket-count { color: #d94343; font-size: 36rpx; font-weight: 600; }
+.ticket-count text { color: #7b838b; font-size: 22rpx; font-weight: 400; }
+.expired { color: #d94343; }
+.empty { padding: 160rpx 0; color: #929aa1; text-align: center; }

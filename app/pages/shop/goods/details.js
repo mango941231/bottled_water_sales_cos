@@ -8,18 +8,22 @@ Page({
         swiperlist: [],
         goods: null,
         commoditId: null,
-        evaluation: []
+        evaluation: [],
+        ticketPackages: [],
+        buyTicketBusy: false
     },
     onLoad: function (options) {
         this.setData({ commoditId: options.commoditId })
         this.getGoodsDetail(options.commoditId)
         this.getEvaluationByGoods(options.commoditId)
+        this.getTicketPackages(options.commoditId)
     },
     getGoodsDetail(commodityId) {
         http.get('goodsDetail', { commodityId }).then((r) => {
+            const goods = r.data
             this.setData({
-                swiperlist: r.images.split(','),
-                goods: r
+                swiperlist: goods.images.split(','),
+                goods
             })
         })
     },
@@ -28,6 +32,36 @@ Page({
             this.setData({
                 evaluation: r.data
             })
+        })
+    },
+    getTicketPackages(commodityId) {
+        http.get('waterTicket/packages', { commodityId }, false).then((r) => {
+            this.setData({ ticketPackages: r.data || [] })
+        })
+    },
+    buyTicket(e) {
+        if (this.data.buyTicketBusy) return
+        const packageInfo = this.data.ticketPackages.find(item => String(item.id) === String(e.currentTarget.dataset.id))
+        if (!packageInfo) return
+        wx.getStorage({
+            key: 'userInfo',
+            success: (res) => {
+                wx.showModal({
+                    title: '购买水票',
+                    content: `确认以 ${packageInfo.price} 元购买「${packageInfo.name}」？当前开发版为模拟支付，确认后立即发放。`,
+                    success: (result) => {
+                        if (!result.confirm) return
+                        this.setData({ buyTicketBusy: true })
+                        http.post('waterTicket/purchase', {
+                            userId: res.data.id,
+                            packageId: packageInfo.id
+                        }).then(() => {
+                            wx.showToast({ title: '水票已发放', icon: 'success' })
+                        }).finally(() => this.setData({ buyTicketBusy: false }))
+                    }
+                })
+            },
+            fail: () => wx.showToast({ title: '请先登录', icon: 'none' })
         })
     },
     shopDetail() {

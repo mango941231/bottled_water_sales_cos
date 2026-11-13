@@ -23,7 +23,8 @@
     "pages/shop/index/index",
     "pages/user/address/index",
     "pages/user/audit/index",
-    "pages/user/goods/index"
+    "pages/user/goods/index",
+    "pages/water-ticket/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#39b54a",

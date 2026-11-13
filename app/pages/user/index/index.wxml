@@ -20,6 +20,12 @@
             <text class='text-grey'>我的订单</text>
         </navigator>
     </view>
+    <view class="cu-item arrow">
+        <navigator class='content' open-type="navigate" hover-class='none' url="/pages/water-ticket/index">
+            <text class='icon-ticket text-orange'></text>
+            <text class='text-grey'>我的水票</text>
+        </navigator>
+    </view>
     <!-- <view class="cu-item arrow">
         <navigator class='content' open-type="navigate" hover-class='none' url="/pages/vipcard/index/index">
             <text class='icon-vipcard text-green'></text>

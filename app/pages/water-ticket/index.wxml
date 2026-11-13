@@ -1,0 +1,27 @@
+<view class="cu-custom" style="height:{{CustomBar}}px;">
+  <view class="cu-bar fixed none-bg text-white bg-img" style="height:{{CustomBar}}px;padding-top:{{StatusBar}}px;">
+    <navigator class="action canui-head-title" open-type="navigateBack" hover-class="none">
+      <text class="icon-back"></text>
+      我的水票
+    </navigator>
+  </view>
+</view>
+<view class="box" style="top: {{CustomBar}}px;">
+<view class="ticket-list">
+  <view class="ticket-item" wx:for="{{accounts}}" wx:key="id">
+    <view class="ticket-head">
+      <view>
+        <view class="ticket-name">{{item.packageName}}</view>
+        <view class="ticket-product">限用商品：{{item.commodityName}}</view>
+      </view>
+      <view class="ticket-count">{{item.remainingNum}}<text> / {{item.totalNum}} 桶</text></view>
+    </view>
+    <view class="ticket-foot">
+      <text>购买 {{item.purchasePrice}} 元</text>
+      <text wx:if="{{item.expired}}" class="expired">已过期</text>
+      <text wx:else>有效期至 {{item.expireTime}}</text>
+    </view>
+  </view>
+  <view wx:if="{{accounts.length === 0}}" class="empty">暂无水票</view>
+</view>
+</view>

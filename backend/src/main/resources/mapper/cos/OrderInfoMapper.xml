@@ -220,6 +220,8 @@
     <select id="selGoodsCart" resultType="java.util.LinkedHashMap">
         SELECT
         oi.id AS orderId,
+        oi.commodity_num AS commodityNum,
+        oi.ticket_num AS ticketNum,
         ci.id,
         ci.`name`,
         ci.images,
@@ -247,6 +249,8 @@
         oi.id AS orderId,
         oi.create_date AS orderDate,
         oi.order_status AS orderStatus,
+        oi.commodity_num AS commodityNum,
+        oi.ticket_num AS ticketNum,
         ci.id,
         ci.`name`,
         ci.images,

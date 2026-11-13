@@ -37,6 +37,21 @@
     </view>
 </view>
 <view class="bg-white padding cauni-details-box">{{ goods.content }}</view>
+<view class="cu-bar bg-white margin-top solid-bottom" wx:if="{{ticketPackages.length}}">
+    <view class="action"><text class="icon-title text-red"></text><text>商品水票</text></view>
+</view>
+<view class="cu-list menu" wx:if="{{ticketPackages.length}}">
+    <view class="cu-item" wx:for="{{ticketPackages}}" wx:key="id">
+        <view class="content">
+            <view>{{item.name}} · {{item.ticketNum}} 桶</view>
+            <view class="text-gray text-sm">{{item.validDays}} 天有效</view>
+        </view>
+        <view class="action">
+            <text class="text-price text-red">{{item.price}}</text>
+            <button class="cu-btn bg-red sm margin-left" data-id="{{item.id}}" bindtap="buyTicket" loading="{{buyTicketBusy}}">购买</button>
+        </view>
+    </view>
+</view>
 <!-- 商品评价 -->
 <view class="cu-bar bg-white margin-top solid-bottom">
     <view class='action'>

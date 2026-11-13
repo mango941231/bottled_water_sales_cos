@@ -39,8 +39,8 @@
                             <view wx:if="{{ item.type == 3 }}">药品</view> -->
                         </view>
                         <view class='action'>
-                            <view class='text-price'>{{ item.price }}</view>
-                            <view class="text-xs text-right text-gray">x1</view>
+                            <view class='text-price'>{{ item.unitPrice * item.commodityNum }}</view>
+                            <view class="text-xs text-right text-gray">x{{item.commodityNum}}</view>
                         </view>
                     </view>
                 </view>
@@ -48,10 +48,10 @@
             <view class="cu-list menu bg-white solid-bottom canui-selet">
                 <view class="cu-item">
                     <view class='content'>
-                        共 <text class="text-red"> 1</text> 件商品
+                    共 <text class="text-red"> {{item.commodityNum}}</text> 桶商品
                     </view>
                     <view class='action'>
-                        合计 <text class="text-price text-red">{{ item.price }}</text>
+                        合计 <text class="text-price text-red">{{ item.unitPrice * item.commodityNum }}</text>
                     </view>
                 </view>
                 <!-- <view class="cu-item arrow">
@@ -60,6 +60,22 @@
                         无可用
                     </view>
                 </view> -->
+            </view>
+            <view class="cu-item ticket-controls">
+                <view class='content'>购买桶数</view>
+                <view class='action quantity-stepper'>
+                    <button class="cu-btn sm line-gray" data-index="{{index}}" data-delta="-1" bindtap="adjustQuantity">-</button>
+                    <text>{{item.commodityNum}}</text>
+                    <button class="cu-btn sm line-gray" data-index="{{index}}" data-delta="1" bindtap="adjustQuantity">+</button>
+                </view>
+            </view>
+            <view class="cu-item ticket-controls" wx:if="{{item.ticketAvailable > 0}}">
+                <view class='content'>使用水票 <text class="text-gray text-sm">可用 {{item.ticketAvailable}} 桶</text></view>
+                <view class='action quantity-stepper'>
+                    <button class="cu-btn sm line-gray" data-index="{{index}}" data-delta="-1" bindtap="adjustTicket">-</button>
+                    <text>{{item.ticketNum}}</text>
+                    <button class="cu-btn sm line-gray" data-index="{{index}}" data-delta="1" bindtap="adjustTicket">+</button>
+                </view>
             </view>
             <!-- <view class="cu-form-group bg-white canui-input">
                 <view class='title'>备注</view>
@@ -84,12 +100,15 @@
             <view class="log-list">
                 <text>商品总价</text> <text class="text-price canui-text-right">{{ allPrice }}</text>
             </view>
+            <view class="log-list" wx:if="{{orderList.length}}">
+                <text>水票抵扣</text> <text class="canui-text-right text-green">{{totalTicketNum}} 桶</text>
+            </view>
             <!-- <view class="log-list">
                 <text>运费(快递)</text> <text class="text-price canui-text-right text-red">0.00</text>
             </view> -->
             <view class="log-list bg-white text-df">
                 <text>订单总价</text><text class="text-sm text-gray">（手续费除外）</text>
-                <text class="text-price canui-text-right text-red">{{ allPrice }}</text>
+                <text class="text-price canui-text-right text-red">{{ cashPrice }}</text>
             </view>
         </view>
     </view>
@@ -99,7 +118,7 @@
 <view class="bg-white canui-foor-fixed canui-submit-view {{TabbarBot=='y'?'canui-submit-order':''}}">
     <view class="bg-red light text-sm canui-pay-tip">您的商品等待商家接单后配送</view>
     <view class="canui-submit">
-        <text class='text-red text-price canui-price'>{{ allPrice }}</text>
+        <text class='text-red text-price canui-price'>{{ cashPrice }}</text>
         <text class='bg-red canui-submit-btn' bindtap='submit'>提交订单</text>
     </view>
 </view>

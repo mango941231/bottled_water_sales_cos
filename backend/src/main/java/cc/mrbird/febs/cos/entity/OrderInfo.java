@@ -86,6 +86,12 @@ public class OrderInfo implements Serializable {
      */
     private Integer addressId;
 
+    /** Purchased quantity in buckets. */
+    private Integer commodityNum;
+
+    /** Quantity paid with water tickets. */
+    private Integer ticketNum;
+
     /**
      * 完成时间
      */

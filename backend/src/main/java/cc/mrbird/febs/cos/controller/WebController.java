@@ -3,6 +3,7 @@ package cc.mrbird.febs.cos.controller;
 import cc.mrbird.febs.common.utils.R;
 import cc.mrbird.febs.cos.entity.*;
 import cc.mrbird.febs.cos.service.*;
+import cc.mrbird.febs.cos.service.WaterTicketService;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.json.JSONUtil;
@@ -18,11 +19,15 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api")
@@ -52,6 +57,8 @@ public class WebController {
     private final IEvaluationService evaluationService;
 
     private final IOrderDetailService orderDetailService;
+
+    private final WaterTicketService waterTicketService;
 
     @PostMapping("/userAdd")
     public R userAdd(@RequestBody UserInfo user) throws Exception {
@@ -424,6 +431,8 @@ public class WebController {
         orderInfo.setCode("ORD-" + System.currentTimeMillis());
         orderInfo.setCreateDate(DateUtil.formatDateTime(new Date()));
         orderInfo.setOrderStatus(0);
+        orderInfo.setCommodityNum(1);
+        orderInfo.setTicketNum(0);
         orderInfo.setOrderPrice(orderInfo.getPrice());
         // 查询用户默认地址
         AddressInfo addressInfo = addressInfoService.getOne(Wrappers.<AddressInfo>lambdaQuery().eq(AddressInfo::getUserId, orderInfo.getUserId())
@@ -478,6 +487,46 @@ public class WebController {
                 .set(OrderInfo::getOrderStatus, 1).in(OrderInfo::getId, ids)));
     }
 
+    @PostMapping("/completeCart")
+    @Transactional(rollbackFor = Exception.class)
+    public R completeCart(@RequestBody Map<String, Object> payload) {
+        Integer userId = Integer.valueOf(String.valueOf(payload.get("userId")));
+        List<Map<String, Object>> lines = (List<Map<String, Object>>) payload.get("lines");
+        if (lines == null || lines.isEmpty()) throw new IllegalArgumentException("请选择要结算的商品");
+        List<Map<String, Object>> result = new java.util.ArrayList<>();
+        for (Map<String, Object> line : lines) {
+            Integer orderId = Integer.valueOf(String.valueOf(line.get("orderId")));
+            int quantity = Integer.parseInt(String.valueOf(line.get("commodityNum")));
+            int ticketNum = Integer.parseInt(String.valueOf(line.get("ticketNum")));
+            OrderInfo order = orderInfoService.getById(orderId);
+            if (order == null || !userId.equals(order.getUserId()) || !Integer.valueOf(0).equals(order.getOrderStatus())) {
+                throw new IllegalArgumentException("购物车商品已变化，请刷新后重试");
+            }
+            CommodityInfo commodity = commodityInfoService.getById(order.getCommodityId());
+            if (commodity == null || quantity <= 0 || ticketNum < 0 || ticketNum > quantity ||
+                    (commodity.getStockNum() != null && quantity > commodity.getStockNum())) {
+                throw new IllegalArgumentException("商品数量或水票数量无效");
+            }
+            int shopId = commodity.getShopId();
+            String code = order.getCode();
+            waterTicketService.consume(userId, shopId, commodity.getId(), ticketNum, code);
+            order.setCommodityNum(quantity);
+            order.setTicketNum(ticketNum);
+            order.setOrderPrice(commodity.getPrice().multiply(BigDecimal.valueOf(quantity - ticketNum)));
+            order.setPayDate(DateUtil.formatDateTime(new Date()));
+            order.setUserNum(1);
+            order.setOrderStatus(1);
+            orderInfoService.updateById(order);
+            Map<String, Object> summary = new LinkedHashMap<>();
+            summary.put("orderId", orderId);
+            summary.put("orderPrice", order.getOrderPrice());
+            summary.put("commodityNum", quantity);
+            summary.put("ticketNum", ticketNum);
+            result.add(summary);
+        }
+        return R.ok(result);
+    }
+
     /**
      * 购买商品
      *
@@ -485,19 +534,32 @@ public class WebController {
      * @return 结果
      */
     @PostMapping("/buyGoods")
+    @Transactional(rollbackFor = Exception.class)
     public R buyGoods(@RequestBody OrderInfo orderInfo) {
+        CommodityInfo commodity = commodityInfoService.getById(orderInfo.getCommodityId());
+        if (commodity == null || !"1".equals(commodity.getOnPut())) throw new IllegalArgumentException("商品已下架");
+        int quantity = orderInfo.getCommodityNum() == null ? 1 : orderInfo.getCommodityNum();
+        int ticketNum = orderInfo.getTicketNum() == null ? 0 : orderInfo.getTicketNum();
+        if (quantity <= 0 || ticketNum < 0 || ticketNum > quantity ||
+                (commodity.getStockNum() != null && quantity > commodity.getStockNum())) {
+            throw new IllegalArgumentException("商品数量或水票数量无效");
+        }
         orderInfo.setCode("ORD-" + System.currentTimeMillis());
         orderInfo.setCreateDate(DateUtil.formatDateTime(new Date()));
         orderInfo.setPayDate(DateUtil.formatDateTime(new Date()));
         orderInfo.setOrderStatus(1);
         orderInfo.setUserNum(1);
-        orderInfo.setOrderPrice(orderInfo.getPrice());
+        orderInfo.setShopId(commodity.getShopId());
+        orderInfo.setCommodityNum(quantity);
+        orderInfo.setTicketNum(ticketNum);
+        orderInfo.setOrderPrice(commodity.getPrice().multiply(BigDecimal.valueOf(quantity - ticketNum)));
         // 查询用户默认地址
         AddressInfo addressInfo = addressInfoService.getOne(Wrappers.<AddressInfo>lambdaQuery().eq(AddressInfo::getUserId, orderInfo.getUserId())
                 .eq(AddressInfo::getDefaultAddress, 1));
         if (addressInfo != null) {
             orderInfo.setAddressId(addressInfo.getId());
         }
+        waterTicketService.consume(orderInfo.getUserId(), commodity.getShopId(), commodity.getId(), ticketNum, orderInfo.getCode());
 
         // 添加订单详情
         OrderDetail orderDetail = new OrderDetail();
