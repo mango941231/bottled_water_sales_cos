@@ -1,6 +1,7 @@
 // pages/user/index.js
 var app = getApp();
 var isLoginSuccess = false;
+const config = require('../../../config')
 let http = require('../../../utils/request')
 
 Page({
@@ -13,13 +14,17 @@ Page({
     visitTotal: 0,
   },
   onLoad: function (options) {
-    //进入页面判断是否可以使用wx.getUserProfile
-    if (wx.canIUse('getUserProfile')) {
-      this.setData({
-        canIUseGetUserProfile: true
-      })
+    if (config.MOCK_LOGIN) {
+      this.loginWithMockUser()
+    } else {
+      //进入页面判断是否可以使用wx.getUserProfile
+      if (wx.canIUse('getUserProfile')) {
+        this.setData({
+          canIUseGetUserProfile: true
+        })
+      }
+      this.loginTap()
     }
-    this.loginTap()
     let that = this;
     wx.showLoading({
       title: '数据加载中',
@@ -48,10 +53,22 @@ Page({
     }
     wx.hideLoading()
   },
+  loginWithMockUser() {
+    const userInfo = Object.assign({}, config.MOCK_USER)
+    app.globalData.userInfo = userInfo
+    this.setData({ userInfo, hasUserInfo: true })
+    wx.setStorage({ key: 'userInfo', data: userInfo })
+  },
   loginTap() {
     wx.getStorage({
       key: 'userInfo',
       success: (res) => {
+        if (res.data.loginMode === 'mock') {
+          wx.removeStorage({ key: 'userInfo' })
+          app.globalData.userInfo = null
+          this.setData({ userInfo: {}, hasUserInfo: false })
+          return
+        }
         app.globalData.userInfo = res.data
         this.initLoginMsg()
       }
