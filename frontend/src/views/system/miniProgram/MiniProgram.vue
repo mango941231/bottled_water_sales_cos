@@ -19,7 +19,7 @@
           <a-upload accept="image/jpeg,image/png,image/gif" :show-upload-list="false" :custom-request="uploadImage" :before-upload="beforeUpload" :disabled="uploading || saving">
             <a-button icon="upload" :loading="uploading" :disabled="saving">{{ uploading ? '正在上传' : '上传图片' }}</a-button>
           </a-upload>
-          <span class="upload-tip">JPG、PNG、GIF，不超过 5MB</span>
+          <span class="upload-tip">JPG、PNG、GIF，不超过 10MB</span>
           <a-input v-model="form.imageUrl" class="image-address" placeholder="也可以填写完整的 HTTP/HTTPS 图片地址" :disabled="uploading || saving" />
           <img v-if="form.imageUrl" class="banner-preview" :src="imageUrl(form.imageUrl)" alt="轮播图预览" />
         </a-form-item>
@@ -84,8 +84,8 @@ export default {
       this.editorVisible = false
     },
     beforeUpload (file) {
-      if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type) || !file.size || file.size > 5 * 1024 * 1024) {
-        this.$message.warning('请选择不超过5MB的 JPG、PNG、GIF 图片')
+      if (!['image/jpeg', 'image/png', 'image/gif'].includes(file.type) || !file.size || file.size > 10 * 1024 * 1024) {
+        this.$message.warning('请选择不超过10MB的 JPG、PNG、GIF 图片')
         return false
       }
       return true

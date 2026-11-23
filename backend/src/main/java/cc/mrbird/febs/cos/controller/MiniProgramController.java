@@ -40,7 +40,7 @@ public class MiniProgramController {
 
     @PostMapping("/images")
     public R upload(@RequestParam("image") MultipartFile image) throws IOException {
-        if (image.isEmpty() || image.getSize() > 5 * 1024 * 1024) throw new IllegalArgumentException("请选择不超过5MB的图片");
+        if (image.isEmpty() || image.getSize() > 10 * 1024 * 1024) throw new IllegalArgumentException("请选择不超过10MB的图片");
         String format;
         try (InputStream stream = image.getInputStream(); ImageInputStream input = ImageIO.createImageInputStream(stream)) {
             Iterator<ImageReader> readers = ImageIO.getImageReaders(input);

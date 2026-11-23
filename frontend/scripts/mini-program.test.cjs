@@ -68,11 +68,13 @@ test('incomplete images, invalid sort and unfinished upload cannot save', async 
   assert.equal(vm.editorVisible, true)
 })
 
-test('upload validation rejects invalid file types and files larger than 5MB', () => {
+test('upload validation accepts 10MB and rejects invalid file types and larger files', () => {
   const {vm} = page()
   assert.equal(vm.beforeUpload({type: 'image/png', size: 12345}), true)
   assert.equal(vm.beforeUpload({type: 'text/html', size: 100}), false)
-  assert.equal(vm.beforeUpload({type: 'image/png', size: 5 * 1024 * 1024 + 1}), false)
+  assert.equal(vm.beforeUpload({type: 'image/png', size: 5 * 1024 * 1024 + 1}), true)
+  assert.equal(vm.beforeUpload({type: 'image/png', size: 10 * 1024 * 1024}), true)
+  assert.equal(vm.beforeUpload({type: 'image/png', size: 10 * 1024 * 1024 + 1}), false)
   assert.equal(vm.imageUrl('banner-example.png'), '/febs/imagesWeb/banner-example.png')
   assert.equal(vm.imageUrl('https://example.com/a.jpg'), 'https://example.com/a.jpg')
 })
