@@ -36,17 +36,15 @@ public class WebController {
 
     private final IUserInfoService userInfoService;
 
-    private final IAuditInfoService auditInfoService;
-
     private final IAddressInfoService addressInfoService;
 
     private final IBulletinInfoService bulletinInfoService;
 
-    private final IShopInfoService shopInfoService;
-
     private final IPostInfoService postInfoService;
 
     private final ICommodityInfoService commodityInfoService;
+
+    private final cc.mrbird.febs.cos.dao.CommodityInfoMapper commodityMapper;
 
     private final IReplyInfoService replyInfoService;
 
@@ -199,33 +197,8 @@ public class WebController {
     public R home() {
         LinkedHashMap<String, Object> result = new LinkedHashMap<>();
         result.put("commodityHot", commodityInfoService.getCommodityHot());
-        result.put("shopInfo", shopInfoService.shopInfoHot());
         result.put("postInfo", postInfoService.getPostListHot());
         return R.ok(result);
-    }
-
-    /**
-     * 用户添加审核信息
-     *
-     * @param auditInfo
-     * @return 结果
-     */
-    @PostMapping("/userAuditAdd")
-    public R userAuditAdd(@RequestBody AuditInfo auditInfo) {
-        auditInfo.setCreateDate(DateUtil.formatDateTime(new Date()));
-        auditInfo.setAuditStatus(0);
-        return R.ok(auditInfoService.save(auditInfo));
-    }
-
-    /**
-     * 根据用户ID获取审核信息
-     *
-     * @param userId
-     * @return 结果
-     */
-    @GetMapping("/auditInfoByUser")
-    public R auditInfoByUser(@RequestParam Integer userId) {
-        return R.ok(auditInfoService.getOne(Wrappers.<AuditInfo>lambdaQuery().eq(AuditInfo::getUserId, userId)));
     }
 
     /**
@@ -428,12 +401,14 @@ public class WebController {
      */
     @PostMapping("/addGoodsCart")
     public R addGoodsCart(@RequestBody OrderInfo orderInfo) {
+        CommodityInfo commodity = commodityInfoService.getById(orderInfo.getCommodityId());
+        if (commodity == null || !"1".equals(commodity.getOnPut())) throw new IllegalArgumentException("商品已下架");
         orderInfo.setCode("ORD-" + System.currentTimeMillis());
         orderInfo.setCreateDate(DateUtil.formatDateTime(new Date()));
         orderInfo.setOrderStatus(0);
         orderInfo.setCommodityNum(1);
         orderInfo.setTicketNum(0);
-        orderInfo.setOrderPrice(orderInfo.getPrice());
+        orderInfo.setOrderPrice(commodity.getPrice());
         // 查询用户默认地址
         AddressInfo addressInfo = addressInfoService.getOne(Wrappers.<AddressInfo>lambdaQuery().eq(AddressInfo::getUserId, orderInfo.getUserId())
                 .eq(AddressInfo::getDefaultAddress, 1));
@@ -474,25 +449,15 @@ public class WebController {
         return R.ok(orderInfoService.selOrderListByOrderIds(ids));
     }
 
-    /**
-     * 购物车完成付款
-     *
-     * @param ids
-     * @return 结果
-     */
-    @GetMapping("/goodsCartComplete")
-    public R goodsCartComplete(@RequestParam List<String> ids) {
-        return R.ok(orderInfoService.update(Wrappers.<OrderInfo>lambdaUpdate().set(OrderInfo::getPayDate, DateUtil.formatDateTime(new Date()))
-                        .set(OrderInfo::getUserNum, 1)
-                .set(OrderInfo::getOrderStatus, 1).in(OrderInfo::getId, ids)));
-    }
-
     @PostMapping("/completeCart")
     @Transactional(rollbackFor = Exception.class)
     public R completeCart(@RequestBody Map<String, Object> payload) {
         Integer userId = Integer.valueOf(String.valueOf(payload.get("userId")));
         List<Map<String, Object>> lines = (List<Map<String, Object>>) payload.get("lines");
         if (lines == null || lines.isEmpty()) throw new IllegalArgumentException("请选择要结算的商品");
+        Integer addressId = payload.get("addressId") == null ? null
+                : Integer.valueOf(String.valueOf(payload.get("addressId")));
+        AddressInfo address = requireOrderAddress(userId, addressId);
         List<Map<String, Object>> result = new java.util.ArrayList<>();
         for (Map<String, Object> line : lines) {
             Integer orderId = Integer.valueOf(String.valueOf(line.get("orderId")));
@@ -503,20 +468,23 @@ public class WebController {
                 throw new IllegalArgumentException("购物车商品已变化，请刷新后重试");
             }
             CommodityInfo commodity = commodityInfoService.getById(order.getCommodityId());
-            if (commodity == null || quantity <= 0 || ticketNum < 0 || ticketNum > quantity ||
+            if (commodity == null || !"1".equals(commodity.getOnPut()) || quantity <= 0 || ticketNum < 0 || ticketNum > quantity ||
                     (commodity.getStockNum() != null && quantity > commodity.getStockNum())) {
                 throw new IllegalArgumentException("商品数量或水票数量无效");
             }
-            int shopId = commodity.getShopId();
             String code = order.getCode();
-            waterTicketService.consume(userId, shopId, commodity.getId(), ticketNum, code);
+            waterTicketService.consume(userId, commodity.getId(), ticketNum, code);
             order.setCommodityNum(quantity);
             order.setTicketNum(ticketNum);
+            order.setAddressId(address.getId());
             order.setOrderPrice(commodity.getPrice().multiply(BigDecimal.valueOf(quantity - ticketNum)));
             order.setPayDate(DateUtil.formatDateTime(new Date()));
             order.setUserNum(1);
-            order.setOrderStatus(1);
+            order.setOrderStatus(OrderStatus.PENDING_DELIVERY);
             orderInfoService.updateById(order);
+            orderDetailService.update(Wrappers.<OrderDetail>lambdaUpdate()
+                    .set(OrderDetail::getAddressId, address.getId())
+                    .eq(OrderDetail::getCode, code).eq(OrderDetail::getUserId, userId));
             Map<String, Object> summary = new LinkedHashMap<>();
             summary.put("orderId", orderId);
             summary.put("orderPrice", order.getOrderPrice());
@@ -547,19 +515,14 @@ public class WebController {
         orderInfo.setCode("ORD-" + System.currentTimeMillis());
         orderInfo.setCreateDate(DateUtil.formatDateTime(new Date()));
         orderInfo.setPayDate(DateUtil.formatDateTime(new Date()));
-        orderInfo.setOrderStatus(1);
+        orderInfo.setOrderStatus(OrderStatus.PENDING_DELIVERY);
         orderInfo.setUserNum(1);
-        orderInfo.setShopId(commodity.getShopId());
         orderInfo.setCommodityNum(quantity);
         orderInfo.setTicketNum(ticketNum);
         orderInfo.setOrderPrice(commodity.getPrice().multiply(BigDecimal.valueOf(quantity - ticketNum)));
-        // 查询用户默认地址
-        AddressInfo addressInfo = addressInfoService.getOne(Wrappers.<AddressInfo>lambdaQuery().eq(AddressInfo::getUserId, orderInfo.getUserId())
-                .eq(AddressInfo::getDefaultAddress, 1));
-        if (addressInfo != null) {
-            orderInfo.setAddressId(addressInfo.getId());
-        }
-        waterTicketService.consume(orderInfo.getUserId(), commodity.getShopId(), commodity.getId(), ticketNum, orderInfo.getCode());
+        AddressInfo addressInfo = requireOrderAddress(orderInfo.getUserId(), orderInfo.getAddressId());
+        orderInfo.setAddressId(addressInfo.getId());
+        waterTicketService.consume(orderInfo.getUserId(), commodity.getId(), ticketNum, orderInfo.getCode());
 
         // 添加订单详情
         OrderDetail orderDetail = new OrderDetail();
@@ -573,56 +536,29 @@ public class WebController {
         return R.ok(orderInfoService.save(orderInfo));
     }
 
-    /**
-     * 查询店铺及商品信息
-     *
-     * @return 结果
-     */
-    @GetMapping("/selShopDetailList")
-    public R selShopDetailList() {
-        return R.ok(commodityInfoService.selShopDetailList());
+    private AddressInfo requireOrderAddress(Integer userId, Integer addressId) {
+        if (userId == null) throw new IllegalArgumentException("请先登录");
+        AddressInfo address = addressId == null
+                ? addressInfoService.getOne(Wrappers.<AddressInfo>lambdaQuery()
+                    .eq(AddressInfo::getUserId, userId).eq(AddressInfo::getDefaultAddress, 1))
+                : addressInfoService.getById(addressId);
+        if (address == null || !userId.equals(address.getUserId())) {
+            throw new IllegalArgumentException("请先设置有效的收货地址");
+        }
+        return address;
     }
 
     /**
-     * 获取商铺及商品详细信息
-     *
-     * @param shopId
-     * @return 结果
-     */
-    @GetMapping("/getShopDetail")
-    public R getShopDetail(@RequestParam Integer shopId) {
-        return R.ok(commodityInfoService.getShopDetail(shopId));
-    }
-
-    /**
-     * 店铺商品排序方式
-     *
-     * @param shopId
-     * @return 结果
-     */
-    @GetMapping("/shopCommoditSort")
-    public R shopCommoditySort(@RequestParam(value = "shopId") Integer shopId, @RequestParam(value = "type") Integer type) {
-        return R.ok(commodityInfoService.shopCommoditySort(shopId, type));
-    }
-
-    /**
-     * 模糊查询店内商品
-     *
-     * @param shopId
-     * @param key
-     * @return 结果
-     */
-    @GetMapping("/commodityLikeByShop")
-    public R commodityLikeByShop(@RequestParam(value = "shopId") Integer shopId, @RequestParam(value = "key") String key) {
-        return R.ok(commodityInfoService.commodityLikeByShop(shopId, key));
-    }
-
-    /**
-     * 查找商品或店铺
+     * 搜索商品
      *
      * @param key
      * @return 结果
      */
+    @GetMapping("/catalog")
+    public R catalog(@RequestParam(required = false) String key, @RequestParam(required = false) Integer sort) {
+        return R.ok(commodityMapper.catalog(key, sort));
+    }
+
     @GetMapping("/getGoodsFuzzy")
     public R getGoodsFuzzy(String key) {
         return R.ok(commodityInfoService.getGoodsFuzzy(key));
@@ -646,8 +582,20 @@ public class WebController {
      * @return 结果
      */
     @GetMapping("/receipt")
-    public R receipt(Integer orderId) {
-        return R.ok(orderInfoService.update(Wrappers.<OrderInfo>lambdaUpdate().set(OrderInfo::getOrderStatus, 3).eq(OrderInfo::getId, orderId)));
+    public R receipt(@RequestParam Integer orderId, @RequestParam Integer userId) {
+        OrderInfo order = orderInfoService.getById(orderId);
+        if (order == null || !userId.equals(order.getUserId())) {
+            throw new IllegalArgumentException("订单不存在或不属于当前用户");
+        }
+        if (Integer.valueOf(OrderStatus.COMPLETED).equals(order.getOrderStatus())) return R.ok(true);
+        if (!Integer.valueOf(OrderStatus.PENDING_DELIVERY).equals(order.getOrderStatus())) {
+            throw new IllegalArgumentException("仅待配送订单可以确认收货");
+        }
+        return R.ok(orderInfoService.update(Wrappers.<OrderInfo>lambdaUpdate()
+                .set(OrderInfo::getOrderStatus, OrderStatus.COMPLETED)
+                .set(OrderInfo::getFinishDate, DateUtil.formatDateTime(new Date()))
+                .eq(OrderInfo::getId, orderId).eq(OrderInfo::getUserId, userId)
+                .eq(OrderInfo::getOrderStatus, OrderStatus.PENDING_DELIVERY)));
     }
 
     /**
@@ -659,7 +607,10 @@ public class WebController {
     @PostMapping("/evaluationAdd")
     public R evaluationAdd(@RequestBody Evaluation evaluation) {
         OrderInfo orderInfo = orderInfoService.getById(evaluation.getOrderId());
-        List<OrderDetail> orderDetailList = orderDetailService.list(Wrappers.<OrderDetail>lambdaQuery().eq(OrderDetail::getCode, orderInfo.getCode()));
+        if (orderInfo == null || !Integer.valueOf(OrderStatus.COMPLETED).equals(orderInfo.getOrderStatus())
+                || !orderInfo.getUserId().equals(evaluation.getUserId())) {
+            throw new IllegalArgumentException("仅可评价本人已完成的订单");
+        }
         evaluation.setOrderId(orderInfo.getId());
         evaluation.setCreateDate(DateUtil.formatDateTime(new Date()));
         return R.ok(evaluationService.save(evaluation));
@@ -677,43 +628,6 @@ public class WebController {
     }
 
     /**
-     * 添加商品信息
-     *
-     * @param commodityInfo
-     * @return 结果
-     */
-    @PostMapping("/addCommodity")
-    public R addCommodity(@RequestBody CommodityInfo commodityInfo) {
-        commodityInfo.setCode("C-" + System.currentTimeMillis());
-        commodityInfo.setCreateDate(DateUtil.formatDateTime(new Date()));
-        ShopInfo shopInfo = shopInfoService.getOne(Wrappers.<ShopInfo>lambdaQuery().eq(ShopInfo::getUserId, commodityInfo.getShopId()));
-        commodityInfo.setShopId(shopInfo.getId());
-        return R.ok(commodityInfoService.save(commodityInfo));
-    }
-
-    /**
-     * 修改商品信息
-     *
-     * @param commodityInfo
-     * @return 结果
-     */
-    @PostMapping("/editCommodity")
-    public R editCommodity(@RequestBody CommodityInfo commodityInfo) {
-        return R.ok(commodityInfoService.updateById(commodityInfo));
-    }
-
-    /**
-     * 根据用户获取商品信息
-     *
-     * @param userId
-     * @return 结果
-     */
-    @GetMapping("/getGoodsByUserId")
-    public R getGoodsByUserId(Integer userId) {
-        return R.ok(commodityInfoService.getGoodsByUserId(userId));
-    }
-
-    /**
      * 根据ID获取商品信息
      *
      * @param commodityId
@@ -724,14 +638,4 @@ public class WebController {
         return R.ok(commodityInfoService.getById(commodityId));
     }
 
-    /**
-     * 根据用户获取卖出的订单
-     *
-     * @param userId
-     * @return 结果
-     */
-    @GetMapping("/getOrderByUserId")
-    public R getOrderByUserId(@RequestParam Integer userId) {
-        return R.ok(orderInfoService.getOrderByUserId(userId));
-    }
 }

@@ -23,12 +23,7 @@
 
     <view class="canui-card-order">
         <view class="canui-order-item bg-white" wx:for="{{ orderList }}">
-            <view class="head-title-box">
-                <text class="icon-shop"></text>
-                <text>{{ item.userName }}</text>
-                <text class="icon-right"></text>
-            </view>
-            <navigator open-type="navigate" hover-class='none' url="/pages/order/details/index">
+            <navigator open-type="navigate" hover-class='none' url="/pages/shop/goods/details?commoditId={{item.id}}">
                 <view class="cu-list menu menu-avatar">
                     <view class="cu-item">
                         <view class="cu-avatar radius lg" style="background-image:url({{imageBaseUrl}}{{ item.image }});"></view>
@@ -116,7 +111,7 @@
 </view>
 
 <view class="bg-white canui-foor-fixed canui-submit-view {{TabbarBot=='y'?'canui-submit-order':''}}">
-    <view class="bg-red light text-sm canui-pay-tip">您的商品等待商家接单后配送</view>
+    <view class="bg-red light text-sm canui-pay-tip">下单后将安排配送，请收到商品后确认收货</view>
     <view class="canui-submit">
         <text class='text-red text-price canui-price'>{{ cashPrice }}</text>
         <text class='bg-red canui-submit-btn' bindtap='submit'>提交订单</text>

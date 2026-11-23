@@ -3,6 +3,11 @@ const config = require('./config');
 
 App({
     onLaunch: function () {
+        if (config.MOCK_LOGIN) {
+            const userInfo = Object.assign({}, config.MOCK_USER)
+            this.globalData.userInfo = userInfo
+            wx.setStorageSync('userInfo', userInfo)
+        }
         wx.getSystemInfo({
             success: e => {
                 this.globalData.StatusBar = e.statusBarHeight;

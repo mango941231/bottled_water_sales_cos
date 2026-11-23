@@ -16,11 +16,12 @@ public class WaterTicketPackage implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
-    private Integer shopId;
     private Integer commodityId;
     private String name;
     private Integer ticketNum;
     private BigDecimal price;
+    private BigDecimal originalPrice;
+    private BigDecimal discountPrice;
     private Integer validDays;
     private Integer status;
     private Date createTime;

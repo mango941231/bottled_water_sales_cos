@@ -20,6 +20,12 @@ page {
     background: #fff;
     height:55px;
 }
+.cu-list.grid.col-4 { display: flex; justify-content: flex-start; padding: 22rpx 16rpx; background: #fff; }
+.cu-list.grid.col-4 .cu-item { width: 50%; padding: 10rpx 0; }
+.shortcut-icon { width: 82rpx; height: 82rpx; margin: 0 auto 10rpx; border-radius: 50%; display:flex; align-items:center; justify-content:center; background:#f2e8f2; color:#87477f; font-size:36rpx; font-weight:700; }
+.cu-list.grid.col-4 .cu-item text { color:#303841; font-size:25rpx; }
+.cu-list.grid.col-4 .cu-item .shortcut-icon { color:#87477f; font-size:36rpx; }
+.home-price { margin-top: 8rpx; color: #e84b45; font-size: 27rpx; font-weight: 700; }
 .canui-video{
     width: 100%;
     height: 425rpx;

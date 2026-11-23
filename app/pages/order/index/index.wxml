@@ -17,12 +17,8 @@
     </scroll-view>
     <view class="canui-card-order margin-top">
         <view class="canui-order-item bg-white" wx:for="{{ orderList }}" wx:if="{{ TabCur == 0 || TabCur == 2 || TabCur == 1 }}">
-            <view class="head-title-box">
-                <text class="icon-shop"></text>
-                <text>{{ item.userName }}</text>
-                <text class="icon-right"></text>
-            </view>
-            <navigator open-type="navigate" hover-class='none' url="/pages/order/details/index?orderId={{ item.orderId }}">
+            <view class="head-title-box"><text>{{item.statusLabel}}</text></view>
+            <navigator open-type="navigate" hover-class='none' url="/pages/order/detail/index?orderId={{ item.orderId }}">
                 <view class="cu-list menu menu-avatar">
                     <view class="cu-item">
                         <view class="cu-avatar radius lg" style="background-image:url({{imageBaseUrl}}{{ item.image }});"></view>
@@ -34,7 +30,7 @@
                         </view>
                         <view class='action' style="padding-left: 15px">
                             <view class='text-price'>{{ item.price }}</view>
-                            <view class="text-xs text-right text-gray">x1</view>
+                            <view class="text-xs text-right text-gray">x{{item.commodityNum}}</view>
                         </view>
                     </view>
                 </view>
@@ -45,7 +41,7 @@
                 </text>
             </view>
             <view class="order-price-box">
-                共1件商品 合计：
+                共{{item.commodityNum}}桶，使用水票{{item.ticketNum}}张 合计：
                 <text class="text-price">{{ item.price }}</text>
             </view>
             <view class="grid col-4 flex justify-end order-btn-box">
@@ -66,40 +62,6 @@
         </view>
         <view wx:if="{{ orderList.length === 0 }}">
             <van-empty style="height: 400px;margin: 0 auto" description="无订单信息" />
-        </view>
-        <view class="canui-order-item bg-white" wx:for="{{ myOrderList }}" wx:if="{{ TabCur == 3 }}">
-            <view class="head-title-box">
-                <text>{{ item.buyer }} </text>
-                <text style="font-size: 12px">{{ item.createDate }}</text>
-            </view>
-            <navigator open-type="navigate" hover-class='none' url="/pages/order/details/index?orderId={{ item.orderId }}">
-                <view class="cu-list menu menu-avatar">
-                    <view class="cu-item">
-                        <view class="cu-avatar radius lg" style="background-image:url({{imageBaseUrl}}{{ item.image }});"></view>
-                        <view class='content canui-xzwz tow' style="padding-left: 15px">
-                            {{ item.name }}
-                        </view>
-                        <view class='action' style="padding-left: 15px">
-                            <view class='text-price'>{{ item.price }}</view>
-                            <view class="text-xs text-right text-gray">x1</view>
-                        </view>
-                    </view>
-                </view>
-            </navigator>
-            <view>
-                <text class="text-right text-red canui-text-left" style="font-size: 11px">
-                    {{ item.days }}
-                </text>
-            </view>
-            <view class="order-price-box">
-                共1件商品 合计：
-                <text class="text-price">{{ item.price }}</text>
-            </view>
-            <view class="grid col-4 flex justify-end order-btn-box">
-                <text wx:if="{{ item.evaluationStatus != null }}" class="text-right text-red" style="font-size: 11px">
-                    {{ item.evaluationContent }}
-                </text>
-            </view>
         </view>
     </view>
     <van-popup show="{{ show }}" position="bottom" custom-style="height: 35%;" bind:close="onClose">

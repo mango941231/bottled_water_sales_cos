@@ -5,7 +5,7 @@ module.exports = {
   // Set to false before release to use the normal WeChat authorization flow.
   MOCK_LOGIN: true,
   MOCK_USER: {
-    id: 1,
+    id: 3,
     userName: '测试用户',
     avatar: '/img/logo.png',
     type: 1,

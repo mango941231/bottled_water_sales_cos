@@ -3,9 +3,7 @@ package cc.mrbird.febs.cos.controller;
 
 import cc.mrbird.febs.common.utils.R;
 import cc.mrbird.febs.cos.entity.MessageInfo;
-import cc.mrbird.febs.cos.entity.ShopInfo;
 import cc.mrbird.febs.cos.service.IMessageInfoService;
-import cc.mrbird.febs.cos.service.IShopInfoService;
 import cn.hutool.core.date.DateUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -26,7 +24,6 @@ public class MessageInfoController {
 
     private final IMessageInfoService messageInfoService;
 
-    private final IShopInfoService shopInfoService;
 
     /**
      * 分页查询消息
@@ -53,37 +50,7 @@ public class MessageInfoController {
         return R.ok(messageInfoService.save(messageInfo));
     }
 
-    /**
-     * 查找聊天记录
-     *
-     * @param takeUser
-     * @param sendUser
-     * @return 结果
-     */
-    @GetMapping("/getMessageDetail")
-    public R getMessageDetail(@RequestParam(value = "takeUser") Integer takeUser, @RequestParam(value = "sendUser") Integer sendUser, @RequestParam(value = "userId") Integer userId) {
-        ShopInfo shopInfo = shopInfoService.getOne(Wrappers.<ShopInfo>lambdaQuery().eq(ShopInfo::getSysUserId, userId));
-        if (takeUser.equals(shopInfo.getUserId())) {
-            messageInfoService.update(Wrappers.<MessageInfo>lambdaUpdate().set(MessageInfo::getTaskStatus, 1)
-                    .eq(MessageInfo::getTakeUser, takeUser).eq(MessageInfo::getSendUser, sendUser));
-        } else {
-            messageInfoService.update(Wrappers.<MessageInfo>lambdaUpdate().set(MessageInfo::getTaskStatus, 1)
-                    .eq(MessageInfo::getTakeUser, sendUser).eq(MessageInfo::getSendUser, takeUser));
-        }
-        return R.ok(messageInfoService.getMessageDetail(takeUser, sendUser));
-    }
 
-    /**
-     * 查询消息信息
-     *
-     * @param userId
-     * @return 结果
-     */
-    @GetMapping("/messageListById")
-    public R messageListById(@RequestParam Integer userId) {
-        ShopInfo shopInfo = shopInfoService.getOne(Wrappers.<ShopInfo>lambdaQuery().eq(ShopInfo::getSysUserId, userId));
-        return R.ok(messageInfoService.messageListById(shopInfo.getUserId()));
-    }
 
     /**
      * 删除评价信息

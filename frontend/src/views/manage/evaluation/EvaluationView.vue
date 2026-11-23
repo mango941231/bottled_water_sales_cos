@@ -57,15 +57,8 @@
       <br/>
       <br/>
       <a-row style="padding-left: 24px;padding-right: 24px;">
-        <a-col style="margin-bottom: 15px"><span style="font-size: 15px;font-weight: 650;color: #000c17">商品信息 - </span>
-          <span style="font-size: 13px;color: #aaaaaa">
-            <a-popover>
-              <template slot="content">
-                <a-avatar shape="square" size={132} icon="user" :src="evaluationData.shopAvatar" />
-              </template>
-              {{ evaluationData.shopName }}的小店
-            </a-popover>
-          </span>
+        <a-col style="margin-bottom: 15px"><span style="font-size: 15px;font-weight: 650;color: #000c17">商品信息</span>
+
         </a-col>
         <a-col :span="8"><b>商品编号：</b>
           {{ evaluationData.commodityCode }}

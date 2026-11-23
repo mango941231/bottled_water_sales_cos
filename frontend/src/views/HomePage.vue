@@ -86,55 +86,7 @@
         </div>
       </a-col>
     </a-row>
-    <a-row :gutter="8" class="count-info" v-if="isPlatformAdmin">
-      <a-col :span="10" style="margin-top: 10px;padding-left: 0px">
-        <a-card class="visit-count" title="店铺收益统计">
-          <a-skeleton active v-if="loading" />
-          <a-list v-if="!loading" item-layout="vertical" size="large" :pagination="pagination" :data-source="shopOrderRate">
-            <a-list-item slot="renderItem" key="item.title" slot-scope="item, index">
-              <template slot="actions">
-                <span key="shopping-cart">
-                  <a-icon type="shopping-cart" style="margin-right: 8px" />
-                  {{ item.orderNum }} 单
-                </span>
-                <span key="dollar">
-                  <a-icon type="dollar" style="margin-right: 8px" />
-                  ￥{{ item.orderPrice }}
-                </span>
-              </template>
-              <a-list-item-meta :description="item.tag">
-                <a slot="title" :href="item.href">{{ item.userName }}的小店</a>
-                <a-avatar slot="avatar" :src="'/febs/imagesWeb/' + item.avatar" />
-              </a-list-item-meta>
-              {{ item.introduction }}
-            </a-list-item>
-          </a-list>
-        </a-card>
-      </a-col>
-      <a-col :span="14" style="margin-top: 10px;padding-right: 0">
-        <a-card class="visit-count">
-          <a-skeleton active v-if="loading" />
-          <a-select style="width: 300px" disabled v-model="shopId" v-if="!loading" @change="shopChange" option-label-prop="label">
-            <a-select-option v-for="(item, index) in shopList" :key="index" :value="item.id" :label="item.userName">
-              <a-row>
-                <a-col :span="4">
-                  <a-avatar style="margin-right: 20px" shape="square" :size="40" icon="user" :src="'/febs/imagesWeb/' + item.avatar" />
-                </a-col>
-                <a-col :span="20">
-                  <a-row>
-                    <a-col><span style="font-size: 14px">{{item.userName}}</span></a-col>
-                  </a-row>
-                </a-col>
-              </a-row>
-            </a-select-option>
-          </a-select>
-          <apexchart v-if="!loading && series2[0].data.length" ref="shopOrderRate" type="bar" height="400" :options="chartOptions2" :series="series2"></apexchart>
-          <a-empty v-if="!loading && !series2[0].data.length" description="暂无店铺订单数据" />
-        </a-card>
-      </a-col>
-    </a-row>
-    <home v-if="isShop"></home>
-    <a-card v-if="!isPlatformAdmin && !isShop" :title="welcomeMessage">
+    <a-card v-if="!isPlatformAdmin" :title="welcomeMessage">
       <p>欢迎使用桶装水配送销售平台，请从左侧菜单选择功能。</p>
     </a-card>
   </div>
@@ -143,7 +95,6 @@
 import HeadInfo from '@/views/common/HeadInfo'
 import {mapState} from 'vuex'
 import moment from 'moment'
-import Home from './manage/component/home/Home.vue'
 moment.locale('zh-cn')
 const listData = []
 for (let i = 0; i < 23; i++) {
@@ -159,7 +110,7 @@ for (let i = 0; i < 23; i++) {
 }
 export default {
   name: 'HomePage',
-  components: {Home, HeadInfo},
+  components: {HeadInfo},
   data () {
     return {
       series: [],
@@ -289,7 +240,6 @@ export default {
         pageSize: 3
       },
       userNum: 0,
-      userAuditNum: 0,
       orderNum: 0,
       commodityNum: 0,
       orderRevenueData: [],
@@ -298,10 +248,7 @@ export default {
         orderPrice: 0
       },
       orderPriceRate: [],
-      shopOrderRate: [],
-      shopList: [],
-      loading: true,
-      shopId: 1
+      loading: true
     }
   },
   computed: {
@@ -315,40 +262,11 @@ export default {
     isPlatformAdmin () {
       return String(this.user.roleId || '').split(',').some(id => ['1', '74'].includes(id.trim()))
     },
-    isShop () {
-      return String(this.user.roleId || '').split(',').some(id => id.trim() === '75')
-    },
     avatar () {
       return `static/avatar/${this.user.avatar}`
     }
   },
   methods: {
-    shopChange (value) {
-      if (value) {
-        this.$get('/cos/order-info/shopOrderRateByComm', {shopId: value}).then((r) => {
-          console.log(r.data.data)
-          if (r.data.data.length === 0) {
-            this.$message.warning('该商户没有订单！')
-          } else {
-            let shopOrderLabel = []
-            let shopOrderData = []
-            r.data.data.forEach((item) => {
-              shopOrderLabel.push(item.name)
-              shopOrderData.push(item.orderPrice)
-            })
-            this.series2[0].data = shopOrderData
-            setTimeout(() => {
-              if (!this.$refs.shopOrderRate) return
-              this.$refs.shopOrderRate.updateOptions({
-                xaxis: {
-                  categories: shopOrderLabel
-                }
-              }, true, true)
-            }, 500)
-          }
-        })
-      }
-    },
     welcome () {
       const date = new Date()
       const hour = date.getHours()
@@ -359,7 +277,6 @@ export default {
       this.loading = true
       this.$get('/cos/order-info/home').then((r) => {
         this.userNum = r.data.userNum
-        this.userAuditNum = r.data.userAuditNum
         this.orderNum = r.data.orderNum
         this.commodityNum = r.data.commodityNum
         let orderRevenueLabel = []
@@ -380,12 +297,6 @@ export default {
         })
         this.series3 = orderPriceRateData
         this.chartOptions3.labels = orderPriceRateLabel
-        this.shopOrderRate = r.data.shopOrderRate
-        this.shopList = r.data.shopList
-        if (this.shopList.length !== 0) {
-          this.shopId = this.shopList[0].id
-          this.shopChange(this.shopList[0].id)
-        }
         setTimeout(() => {
           this.loading = false
         }, 500)

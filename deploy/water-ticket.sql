@@ -6,7 +6,7 @@ ALTER TABLE order_info
 
 CREATE TABLE water_ticket_package (
     id INT NOT NULL AUTO_INCREMENT,
-    shop_id INT NOT NULL,
+    shop_id INT NULL DEFAULT NULL,
     commodity_id INT NOT NULL,
     name VARCHAR(100) NOT NULL,
     ticket_num INT NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE water_ticket_package (
 CREATE TABLE water_ticket_account (
     id BIGINT NOT NULL AUTO_INCREMENT,
     user_id INT NOT NULL,
-    shop_id INT NOT NULL,
+    shop_id INT NULL DEFAULT NULL,
     commodity_id INT NOT NULL,
     package_id INT NOT NULL,
     package_name VARCHAR(100) NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE water_ticket_usage (
     account_id BIGINT NOT NULL,
     order_code VARCHAR(64) NOT NULL,
     user_id INT NOT NULL,
-    shop_id INT NOT NULL,
+    shop_id INT NULL DEFAULT NULL,
     commodity_id INT NOT NULL,
     ticket_num INT NOT NULL,
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

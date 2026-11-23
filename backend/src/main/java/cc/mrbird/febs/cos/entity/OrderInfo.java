@@ -41,10 +41,6 @@ public class OrderInfo implements Serializable {
      */
     private Integer commodityId;
 
-    /**
-     * 所属商铺
-     */
-    private Integer shopId;
 
     /**
      * 价格
@@ -57,7 +53,7 @@ public class OrderInfo implements Serializable {
     private String remark;
 
     /**
-     * 订单状态（0.正在拼单 1.已完成 2.拼单失败）
+     * 订单状态（0.待支付 1.待配送 2.已取消 3.已完成 4.已关闭）
      */
     private Integer orderStatus;
 
@@ -106,8 +102,6 @@ public class OrderInfo implements Serializable {
     @TableField(exist = false)
     private String userName;
 
-    @TableField(exist = false)
-    private String shopName;
 
     @TableField(exist = false)
     private Integer type;

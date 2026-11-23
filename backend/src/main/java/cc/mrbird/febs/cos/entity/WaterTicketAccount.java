@@ -17,7 +17,6 @@ public class WaterTicketAccount implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
     private Integer userId;
-    private Integer shopId;
     private Integer commodityId;
     private Integer packageId;
     private String packageName;

@@ -1,5 +1,6 @@
 const app = getApp();
 let http = require('../../../utils/request')
+const orderStatus = require('../../../utils/order-status')
 Page({
     data: {
         StatusBar: app.globalData.StatusBar,
@@ -7,7 +8,7 @@ Page({
         CustomBar: app.globalData.CustomBar,
         TabbarBot: app.globalData.tabbar_bottom,
         TabCur: 0, scrollLeft: 0,
-        SortMenu: [{ id: 0, name: "全部订单" }, { id: 1, name: "待收货" }, { id: 2, name: "已完成" }],
+        SortMenu: [{ id: 0, name: "全部订单" }, { id: 1, name: "待配送" }, { id: 2, name: "已完成" }],
         userInfo: null,
         orderListCopy: [],
         orderList: [],
@@ -21,10 +22,6 @@ Page({
         wx.getStorage({
             key: 'userInfo',
             success: (res) => {
-                if (res.data.type == 2) {
-                    this.setData({ SortMenu: [{ id: 0, name: "全部订单" }, { id: 1, name: "待收货" }, { id: 2, name: "已完成" }]})
-                    //this.getOrderByUserId(res.data.id)
-                }
                 this.setData({ userInfo: res.data })
                 this.getOrderListByUserId(res.data.id)
             },
@@ -35,17 +32,6 @@ Page({
                     duration: 2000
                 })
             }
-        })
-    },
-    getOrderByUserId(userId) {
-        http.get('getOrderByUserId', { userId }).then((r) => {
-            r.data.forEach(item => {
-                item.image = item.images.split(',')[0],
-                    item.days = this.timeFormat(item.createDate)
-            });
-            this.setData({
-                myOrderList: r.data
-            })
         })
     },
     onChange: function (e) {
@@ -66,7 +52,7 @@ Page({
             content: '确定要收货吗？',
             success: (sm) => {
                 if (sm.confirm) {
-                    http.get('receipt', { orderId: e.currentTarget.dataset['index'] }).then((r) => {
+                    http.get('receipt', { orderId: e.currentTarget.dataset['index'], userId: this.data.userInfo.id }).then((r) => {
                         wx.showToast({
                             title: '收货成功',
                             icon: 'success',
@@ -148,14 +134,18 @@ Page({
             return time;
         }
     },
+    onShow() {
+        if (this.data.userInfo) this.getOrderListByUserId(this.data.userInfo.id)
+    },
     getOrderListByUserId(userId) {
         http.get('getOrderListByUserId', { userId }).then((r) => {
             r.data.forEach(item => {
-                item.image = item.images.split(',')[0],
-                    item.days = this.timeFormat(item.createDate)
+                item.image = item.images ? item.images.split(',')[0] : ''
+                item.days = this.timeFormat(item.createDate)
+                item.statusLabel = orderStatus.label(item.orderStatus)
             });
             this.setData({
-                orderList: r.data,
+                orderList: r.data.filter(item => this.data.TabCur == 0 || item.orderStatus == (this.data.TabCur == 1 ? 1 : 3)),
                 orderListCopy: r.data
             })
         })

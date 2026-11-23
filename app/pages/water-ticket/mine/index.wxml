@@ -1,0 +1,16 @@
+<view class="cu-custom" style="height:{{CustomBar}}px;">
+  <view class="cu-bar fixed bg-white" style="height:{{CustomBar}}px;padding-top:{{StatusBar}}px;">
+    <view class="action" bindtap="back"><text class="icon-back"></text> 我的水票</view>
+  </view>
+</view>
+<view class="mine-page" style="padding-top:{{CustomBar}}px;">
+  <view class="account-card" wx:for="{{accounts}}" wx:key="id">
+    <view class="account-head">
+      <view class="account-name">{{item.packageName}}</view>
+      <view class="remaining">{{item.remainingNum}}<text> / {{item.totalNum}} 桶</text></view>
+    </view>
+    <view class="account-product">适用商品：{{item.commodityName}}</view>
+    <view class="account-foot"><text>购买价 ¥{{item.purchasePrice}}</text><text class="{{item.expired ? 'expired' : ''}}">{{item.expireText}}</text></view>
+  </view>
+  <view wx:if="{{accounts.length === 0}}" class="empty">暂无水票</view>
+</view>

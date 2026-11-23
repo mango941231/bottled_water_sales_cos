@@ -18,7 +18,6 @@ public class WaterTicketUsage implements Serializable {
     private Long accountId;
     private String orderCode;
     private Integer userId;
-    private Integer shopId;
     private Integer commodityId;
     private Integer ticketNum;
     private Date createTime;

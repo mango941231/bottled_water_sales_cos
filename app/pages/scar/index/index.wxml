@@ -17,9 +17,6 @@
             <view class="canui-order-item bg-white" wx:for="{{ orderList }}">
                 <view class="head-title-box">
                     <checkbox class='round red' value="{{item.orderId}}" checked="{{ item.checked ? true : false }}"></checkbox>
-                    <text class="icon-shop"></text>
-                    <text>{{ item.userName }}</text>
-                    <text class="icon-right"></text>
                 </view>
                 <view class="cu-list menu menu-avatar">
                     <view class="cu-item">

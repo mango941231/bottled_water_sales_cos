@@ -1,66 +1,26 @@
-// pages/order/detail/index.js
+const app = getApp()
+const http = require('../../../utils/request')
+const status = require('../../../utils/order-status')
 Page({
-
-  /**
-   * 页面的初始数据
-   */
-  data: {
-
+  data: {StatusBar: app.globalData.StatusBar, CustomBar: app.globalData.CustomBar, imageBaseUrl: app.globalData.imageBaseUrl, order: null},
+  onLoad(options) {
+    const user = wx.getStorageSync('userInfo')
+    if (!user) return wx.showToast({title: '请先登录', icon: 'none'})
+    this.userId = user.id
+    this.orderId = options.orderId
+    this.load()
   },
-
-  /**
-   * 生命周期函数--监听页面加载
-   */
-  onLoad: function (options) {
-
+  load() {
+    return http.get('selOrderListByOrderIds', {ids: this.orderId}).then(r => {
+      const order = (r.data || [])[0]
+      if (order) this.setData({order: {...order, image: order.images ? order.images.split(',')[0] : '', statusLabel: status.label(order.orderStatus)}})
+    })
   },
-
-  /**
-   * 生命周期函数--监听页面初次渲染完成
-   */
-  onReady: function () {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面显示
-   */
-  onShow: function () {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面隐藏
-   */
-  onHide: function () {
-
-  },
-
-  /**
-   * 生命周期函数--监听页面卸载
-   */
-  onUnload: function () {
-
-  },
-
-  /**
-   * 页面相关事件处理函数--监听用户下拉动作
-   */
-  onPullDownRefresh: function () {
-
-  },
-
-  /**
-   * 页面上拉触底事件的处理函数
-   */
-  onReachBottom: function () {
-
-  },
-
-  /**
-   * 用户点击右上角分享
-   */
-  onShareAppMessage: function () {
-
+  receipt() {
+    wx.showModal({title: '确认收货', content: '确认已收到本次订购的桶装水？', success: result => {
+      if (result.confirm) http.get('receipt', {orderId: this.orderId, userId: this.userId}).then(() => {
+        wx.showToast({title: '收货成功'}); this.load()
+      })
+    }})
   }
 })

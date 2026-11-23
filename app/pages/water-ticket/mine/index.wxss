@@ -1,0 +1,12 @@
+page { min-height: 100%; background: #f4f6f8; }
+.cu-custom { position: absolute; top: 0; width: 100%; z-index: 5; }
+.cu-custom .cu-bar { color: #222; }
+.mine-page { padding: 24rpx; }
+.account-card { margin-bottom: 20rpx; padding: 28rpx; border-left: 8rpx solid #2a9b79; border-radius: 10rpx; background: #fff; }
+.account-head, .account-foot { display: flex; align-items: center; justify-content: space-between; }
+.account-name { color: #20252b; font-size: 31rpx; font-weight: 600; }
+.remaining { color: #e24d45; font-size: 36rpx; font-weight: 700; }
+.remaining text { color: #7e8992; font-size: 22rpx; font-weight: 400; }
+.account-product, .account-foot { margin-top: 16rpx; color: #7b858e; font-size: 22rpx; }
+.expired { color: #d94343; }
+.empty { padding-top: 200rpx; color: #929aa1; text-align: center; }

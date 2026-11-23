@@ -1,6 +1,5 @@
 package cc.mrbird.febs.cos.controller;
 
-
 import cc.mrbird.febs.common.utils.R;
 import cc.mrbird.febs.cos.entity.OrderInfo;
 import cc.mrbird.febs.cos.service.IOrderInfoService;
@@ -40,28 +39,6 @@ public class OrderInfoController {
     @GetMapping("/order/detail/{orderCode}")
     public R selectOrderDetail(@PathVariable("orderCode") String orderCode) {
         return R.ok(orderInfoService.selectOrderDetail(orderCode));
-    }
-
-    /**
-     * 根据商铺获取订单统计
-     *
-     * @param shopId 商铺ID
-     * @return 结果
-     */
-    @GetMapping("/shopOrderRateByComm")
-    public R shopOrderRateByComm(@RequestParam Integer shopId) {
-        return R.ok(orderInfoService.shopOrderRateByComm(shopId));
-    }
-
-    /**
-     * 商家首页统计
-     *
-     * @param shopId 商家ID
-     * @return 结果
-     */
-    @GetMapping("/home/data/shop/{shopId}")
-    public R selectHomeDataByShop(@PathVariable("shopId") Integer shopId) {
-        return R.ok(orderInfoService.selectHomeDataByShop(shopId));
     }
 
     /**

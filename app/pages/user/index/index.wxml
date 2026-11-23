@@ -21,7 +21,7 @@
         </navigator>
     </view>
     <view class="cu-item arrow">
-        <navigator class='content' open-type="navigate" hover-class='none' url="/pages/water-ticket/index">
+        <navigator class='content' open-type="navigate" hover-class='none' url="/pages/water-ticket/mine/index">
             <text class='icon-ticket text-orange'></text>
             <text class='text-grey'>我的水票</text>
         </navigator>
@@ -44,10 +44,5 @@
             <text class='text-grey'>地址管理</text>
         </navigator>
     </view>
-    <!-- <view class="cu-item arrow" wx:if="{{userInfo.type == 2}}">
-        <navigator class='content' open-type="navigate" hover-class='none' url="/pages/user/goods/index">
-            <text class='icon-vipcard text-green'></text>
-            <text class='text-grey'>我的商品</text>
-        </navigator>
-    </view> -->
+
 </view>

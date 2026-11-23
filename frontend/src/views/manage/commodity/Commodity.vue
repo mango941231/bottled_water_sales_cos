@@ -65,6 +65,7 @@
         <template slot="operation" slot-scope="text, record">
           <a-icon type="setting" theme="twoTone" twoToneColor="#4a9ff5" @click="edit(record)" title="修 改"></a-icon>
           <a-icon type="profile" theme="twoTone" twoToneColor="#4a9ff5" @click="view(record)" title="详 情" style="margin-left: 15px"></a-icon>
+          <a-icon type="gift" theme="twoTone" twoToneColor="#4a9ff5" @click="manageTickets(record)" title="水票管理" aria-label="水票管理" style="margin-left: 15px"></a-icon>
         </template>
       </a-table>
     </div>
@@ -85,6 +86,7 @@
       :commodityShow="commodityView.visiable"
       :commodityData="commodityView.data">
     </commodity-view>
+    <water-ticket :visible="ticketVisible" :commodity="ticketCommodity" @close="ticketVisible = false" />
   </a-card>
 </template>
 
@@ -93,13 +95,14 @@ import RangeDate from '@/components/datetime/RangeDate'
 import commodityAdd from './CommodityAdd.vue'
 import commodityEdit from './CommodityEdit.vue'
 import commodityView from './CommodityView'
+import WaterTicket from './WaterTicket'
 import {mapState} from 'vuex'
 import moment from 'moment'
 moment.locale('zh-cn')
 
 export default {
   name: 'commodity',
-  components: {commodityAdd, commodityEdit, RangeDate, commodityView},
+  components: {commodityAdd, commodityEdit, RangeDate, commodityView, WaterTicket},
   data () {
     return {
       advanced: false,
@@ -113,6 +116,8 @@ export default {
       commodityEdit: {
         visiable: false
       },
+      ticketVisible: false,
+      ticketCommodity: null,
       queryParams: {},
       filteredInfo: null,
       sortedInfo: null,
@@ -144,17 +149,6 @@ export default {
         title: '商品名称',
         ellipsis: true,
         dataIndex: 'name'
-      }, {
-        title: '所属商铺',
-        dataIndex: 'shopName',
-        ellipsis: true,
-        customRender: (text, row, index) => {
-          if (text !== null) {
-            return text
-          } else {
-            return '- -'
-          }
-        }
       }, {
         title: '商品价格',
         dataIndex: 'price',
@@ -225,6 +219,10 @@ export default {
     view (row) {
       this.commodityView.data = row
       this.commodityView.visiable = true
+    },
+    manageTickets (row) {
+      this.ticketCommodity = row
+      this.ticketVisible = true
     },
     handlecommodityViewClose () {
       this.commodityView.visiable = false

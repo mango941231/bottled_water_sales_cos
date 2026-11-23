@@ -7,10 +7,9 @@ Page({
         CustomBar: app.globalData.CustomBar,
         TabbarBot: app.globalData.tabbar_bottom,
         TabCur: 0,scrollLeft:0,
-        SortMenu: [{id:0,name:"商品列表"},{id:1,name:"店铺列表"}],
+        SortMenu: [{id:0,name:"商品列表"}],
         key: '',
-        commodity: [],
-        shop: []
+        commodity: []
     },
     onLoad: function (options) {
         this.setData({ key: options.key })
@@ -19,11 +18,10 @@ Page({
     getGoodsFuzzy() {
         http.get('getGoodsFuzzy', { key: this.data.key }).then((r) => {
             r.commodity.forEach(item => {
-                item.image = item.images.split(',')[0]
+                item.image = item.images ? item.images.split(',')[0] : ''
             });
             this.setData({
-                commodity: r.commodity,
-                shop: r.shop
+                commodity: r.commodity
             })
 		})
     },

@@ -55,14 +55,19 @@ Page({
     },
     getGoodsDetail(commodityId) {
         http.get('goodsDetail', { commodityId }).then((r) => {
-            let order = r.data
+            let order = r.data || r
+            if (!order || order.id == null) {
+                throw new Error('商品信息不存在')
+            }
             let allPrice = Number(order.price) * this.data.commodityNum
-            order.image = order.images.split(',')[0]
+            order.image = order.images ? order.images.split(',')[0] : ''
             order.unitPrice = Number(order.price)
             order.commodityNum = this.data.commodityNum
             order.ticketNum = 0
             this.setData({ orderList: [order], allPrice: allPrice.toFixed(2) })
             this.loadTicketBalances([order])
+        }).catch((error) => {
+            wx.showToast({ title: error.message || '商品信息加载失败', icon: 'none' })
         })
     },
     getOrderList(orderIds) {
@@ -129,7 +134,7 @@ Page({
                     commodityNum: item.commodityNum,
                     ticketNum: item.ticketNum
                 }))
-                http.post('completeCart', { userId: this.data.userInfo.id, lines }).then((r) => {
+                http.post('completeCart', { userId: this.data.userInfo.id, addressId: this.data.addressInfo.id, lines }).then((r) => {
                     wx.showToast({
                         title: '支付成功',
                         icon: 'success',

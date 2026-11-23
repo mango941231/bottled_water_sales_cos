@@ -52,50 +52,7 @@ public class CommodityInfoServiceImpl extends ServiceImpl<CommodityInfoMapper, C
     }
 
     /**
-     * 查询店铺及商品信息
-     *
-     * @return 结果
-     */
-    @Override
-    public List<LinkedHashMap<String, Object>> selShopDetailList() {
-        List<LinkedHashMap<String, Object>> shopList = baseMapper.selShopList();
-        shopList.forEach(item -> item.put("goods", this.list(Wrappers.<CommodityInfo>lambdaQuery().eq(CommodityInfo::getShopId, item.get("id")))));
-        return shopList;
-    }
-
-    @Override
-    public LinkedHashMap<String, Object> getShopDetail(Integer shopId) {
-        LinkedHashMap<String, Object> result = baseMapper.shopInfoById(shopId);
-        result.put("goods", baseMapper.shopInfoDetail(shopId));
-        return result;
-    }
-
-    /**
-     * 店铺商品排序方式
-     *
-     * @param shopId 商铺ID
-     * @param type   类型
-     * @return 结果
-     */
-    @Override
-    public List<LinkedHashMap<String, Object>> shopCommoditySort(Integer shopId, Integer type) {
-        return baseMapper.shopCommoditySort(shopId, type);
-    }
-
-    /**
-     * 模糊查询店内商品
-     *
-     * @param shopId 商铺ID
-     * @param key    商品
-     * @return 结果
-     */
-    @Override
-    public List<LinkedHashMap<String, Object>> commodityLikeByShop(Integer shopId, String key) {
-        return baseMapper.commodityLikeByShop(shopId, key);
-    }
-
-    /**
-     * 查找商品或店铺
+     * 搜索商品
      *
      * @param key 商品
      * @return 结果
@@ -103,19 +60,8 @@ public class CommodityInfoServiceImpl extends ServiceImpl<CommodityInfoMapper, C
     @Override
     public LinkedHashMap<String, Object> getGoodsFuzzy(String key) {
         LinkedHashMap<String, Object> result = new LinkedHashMap<>();
-        result.put("commodity", baseMapper.commodityLikeByShop(null, key));
-        result.put("shop", baseMapper.shopInfoLike(key));
+        result.put("commodity", baseMapper.catalog(key, null));
         return result;
     }
 
-    /**
-     * 根据用户获取商品信息
-     *
-     * @param userId 用户ID
-     * @return 结果
-     */
-    @Override
-    public List<LinkedHashMap<String, Object>> getGoodsByUserId(Integer userId) {
-        return baseMapper.getGoodsByUserId(userId);
-    }
 }

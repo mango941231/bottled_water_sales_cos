@@ -22,9 +22,6 @@
         <if test="userInfo.sex != null">
             AND ui.sex = #{userInfo.sex}
         </if>
-        <if test="userInfo.type != null">
-            AND ui.type = #{userInfo.type}
-        </if>
         ORDER BY ui.create_date
     </select>
 </mapper>

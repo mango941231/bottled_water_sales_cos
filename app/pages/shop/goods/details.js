@@ -20,11 +20,16 @@ Page({
     },
     getGoodsDetail(commodityId) {
         http.get('goodsDetail', { commodityId }).then((r) => {
-            const goods = r.data
+            const goods = r.data || r
+            if (!goods || goods.id == null) {
+                throw new Error('商品信息不存在')
+            }
             this.setData({
-                swiperlist: goods.images.split(','),
+                swiperlist: goods.images ? goods.images.split(',').filter(Boolean) : [],
                 goods
             })
+        }).catch((error) => {
+            wx.showToast({ title: error.message || '商品信息加载失败', icon: 'none' })
         })
     },
     getEvaluationByGoods(commodityId) {
@@ -64,34 +69,17 @@ Page({
             fail: () => wx.showToast({ title: '请先登录', icon: 'none' })
         })
     },
-    shopDetail() {
-        wx.navigateTo({
-			url: '/pages/shop/index/index?shopId='+this.data.goods.shopId+''
-		});
-    },
-    message() {
-        wx.getStorage({
-            key: 'userInfo',
-            success: (res) => {
-                wx.navigateTo({
-                    url: '/pages/user/detail/index?takeUser=' + this.data.goods.userId + '&sendUser=' + res.data.id + '&otherName=' + this.data.goods.userName + ''
-                });
-            },
-            fail: res => {
-                wx.showToast({
-                    title: '请先进行登录',
-                    icon: 'none',
-                    duration: 2000
-                })
-            }
-        })
-    },
+    homeView() { wx.switchTab({ url: '/pages/home/index/index' }) },
     cartView() {
         wx.switchTab({
             url: '/pages/scar/index/index'
         })
     },
     addCart() {
+        if (!this.data.goods) {
+            wx.showToast({ title: '商品信息尚未加载完成', icon: 'none' })
+            return
+        }
         if (this.data.goods.onPut == 0) {
             wx.showToast({
                 title: '该商品已下架',
@@ -132,6 +120,10 @@ Page({
         }
     },
     buyGoods() {
+        if (!this.data.goods) {
+            wx.showToast({ title: '商品信息尚未加载完成', icon: 'none' })
+            return
+        }
         if (this.data.goods.onPut == 0) {
             wx.showToast({
                 title: '该商品已下架',

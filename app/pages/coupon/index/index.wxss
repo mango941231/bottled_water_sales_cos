@@ -1,50 +1,26 @@
-page {
-    padding-top: 50px;
-    padding-bottom:170rpx;
-}
-.cu-custom{
-    position: absolute;
-    top: 0px;
-    width: 100%;
-}
-.cu-custom .cu-bar{
-    padding-right:inherit;
-    background-image:linear-gradient(45deg, rgb(15, 112, 65), rgb(15, 112, 65));
-}
-.box{
-    position: absolute;
-    top: 64px;
-    width: 100%;
-}
-
-.cu-card.article>.cu-item {
-    padding-bottom:0rpx;
-}
-.cu-card.article>.cu-item .content {
-    padding:0;
-}
-.cu-card.article>.cu-item .content>.canui-left-box{
-    width:240rpx;
-    height:6.4em;
-    margin-right:20rpx;
-    text-align:center;
-}
-.canui-left-box .canui-co-xl-price{
-    font-size:50rpx;
-    margin-top:1em;
-    line-height:1.2em;
-}
-.canui-left-box .canui-co-price{
-    font-size:22rpx;
-    color: #f1f1f1;
-}
-.cu-card.article>.cu-item .content .desc {
-    padding:30rpx 0;
-}
-.canui-co-time{
-    font-size:25rpx;
-}
-.canui-foor-fixed{
-    text-align:center;
-    bottom:20rpx;
-}
+page { min-height: 100%; background: #f2f4f7; }
+.cu-custom { position: absolute; top: 0; width: 100%; z-index: 5; }
+.cu-custom .cu-bar { color: #222; }
+.coupon-page { padding-bottom: 40rpx; }
+.coupon-banner { position: relative; overflow: hidden; height: 218rpx; margin: 18rpx 24rpx 0; padding: 36rpx 32rpx; border-radius: 16rpx; box-sizing: border-box; background: linear-gradient(105deg, #ccecff, #edf8ff 58%, #f9e8f0); }
+.banner-title { position: relative; z-index: 1; color: #194d9a; font-size: 42rpx; font-weight: 700; }
+.banner-subtitle { position: relative; z-index: 1; margin-top: 12rpx; color: #4778b7; font-size: 25rpx; }
+.banner-ticket { position: absolute; top: 16rpx; right: 38rpx; width: 154rpx; height: 154rpx; border-radius: 22rpx; background: #ffad51; color: #fff; font-size: 88rpx; font-weight: 700; line-height: 154rpx; text-align: center; transform: rotate(12deg); box-shadow: 18rpx 12rpx 0 rgba(255, 131, 97, .32); }
+.coupon-tabs { display: flex; height: 88rpx; background: #fff; }
+.coupon-tab { position: relative; flex: 1; color: #82909d; font-size: 27rpx; line-height: 88rpx; text-align: center; }
+.coupon-tab.selected { color: #1689e9; font-weight: 600; }
+.coupon-tab.selected:after { position: absolute; bottom: 0; left: calc(50% - 24rpx); width: 48rpx; height: 6rpx; border-radius: 4rpx; background: #1689e9; content: ''; }
+.coupon-list { padding: 20rpx 24rpx; }
+.coupon-card { position: relative; display: flex; align-items: center; min-height: 196rpx; overflow: hidden; margin-bottom: 20rpx; border-radius: 24rpx; background: #fff; box-shadow: 0 8rpx 20rpx rgba(28, 45, 64, .06); }
+.coupon-value { position: relative; display: flex; flex: none; flex-direction: column; align-items: center; justify-content: center; align-self: stretch; width: 270rpx; background: linear-gradient(145deg, #ff8b6c, #ff684e); color: #fff; }
+.coupon-value:after { position: absolute; top: 0; right: -2rpx; height: 100%; border-right: 2rpx dashed rgba(255,255,255,.78); content: ''; }
+.coupon-value:before { position: absolute; top: calc(50% - 17rpx); left: -18rpx; width: 34rpx; height: 34rpx; border-radius: 50%; background: #f2f4f7; content: ''; }
+.value-text { font-size: 50rpx; font-weight: 700; }
+.condition-text { margin-top: 8rpx; font-size: 23rpx; }
+.coupon-content { flex: 1; min-width: 0; padding: 20rpx 16rpx 20rpx 22rpx; }
+.coupon-tag { display: inline-block; padding: 5rpx 10rpx; border-radius: 6rpx; background: #fff1e5; color: #e67a37; font-size: 20rpx; }
+.coupon-name { overflow: hidden; margin-top: 8rpx; color: #28313a; font-size: 27rpx; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.coupon-scope, .coupon-valid { overflow: hidden; margin-top: 7rpx; color: #77838e; font-size: 21rpx; white-space: nowrap; text-overflow: ellipsis; }
+.claim-button { flex: none; width: 142rpx; height: 58rpx; margin: 0 20rpx 0 0; padding: 0; border-radius: 32rpx; background: #1689ec; color: #fff; font-size: 21rpx; line-height: 58rpx; box-shadow: 0 6rpx 12rpx rgba(22,137,236,.18); }
+.claimed-label { flex: none; margin: 0 20rpx 0 0; color: #9ca5ad; font-size: 22rpx; }
+.empty { padding: 140rpx 0; color: #9ba5ae; text-align: center; }

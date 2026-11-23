@@ -1,5 +1,5 @@
 <template>
-  <a-card :bordered="false" class="card-area">
+  <a-card :bordered="false" class="card-area order-list">
     <div :class="advanced ? 'search' : null">
       <!-- 搜索区域 -->
       <a-form layout="horizontal">
@@ -11,14 +11,6 @@
                 :labelCol="{span: 5}"
                 :wrapperCol="{span: 18, offset: 1}">
                 <a-input v-model="queryParams.commodityName"/>
-              </a-form-item>
-            </a-col>
-            <a-col :md="6" :sm="24">
-              <a-form-item
-                label="店铺名"
-                :labelCol="{span: 5}"
-                :wrapperCol="{span: 18, offset: 1}">
-                <a-input v-model="queryParams.shopName"/>
               </a-form-item>
             </a-col>
             <a-col :md="6" :sm="24">
@@ -50,24 +42,15 @@
                :pagination="pagination"
                :loading="loading"
                :rowSelection="{selectedRowKeys: selectedRowKeys, onChange: onSelectChange}"
-               :scroll="{ x: 900 }"
+               :scroll="{ x: 1660 }"
+               :rowClassName="orderRowClass"
                @change="handleTableChange">
-        <template slot="nameShow" slot-scope="text, record">
-          <template>
-            <a-tooltip>
-              <template slot="title">
-                {{ record.name }}
-              </template>
-              {{ record.name.slice(0, 10) }} ...
-            </a-tooltip>
-          </template>
-        </template>
         <template slot="userNameShow" slot-scope="text, record">
           <a-popover>
             <template slot="content">
               <a-avatar shape="square" size={132} icon="user" :src="record.avatar" />
             </template>
-            <a>{{ record.userName }}</a>
+            <a>{{ record.userName || '- -' }}</a>
           </a-popover>
         </template>
         <template slot="addressShow" slot-scope="text, record">
@@ -76,7 +59,7 @@
               <template slot="title">
                 {{ record.address }}
               </template>
-              {{ record.address.slice(0, 10) }} ...
+              <span class="order-cell">{{ record.address || '- -' }}</span>
             </a-tooltip>
           </template>
         </template>
@@ -95,6 +78,7 @@
 </template>
 
 <script>
+import {orderStatusLabel} from '@/utils/order-status'
 import RangeDate from '@/components/datetime/RangeDate'
 import {mapState} from 'vuex'
 import moment from 'moment'
@@ -134,80 +118,48 @@ export default {
       currentUser: state => state.account.user
     }),
     columns () {
+      const textOrEmpty = text => text === null || text === undefined || text === '' ? '- -' : text
       return [{
-        title: '订单编号',
-        ellipsis: true,
-        dataIndex: 'code'
+        title: '下单时间', dataIndex: 'createDate', width: 180, customRender: textOrEmpty
       }, {
-        title: '商品名称',
-        dataIndex: 'name',
-        scopedSlots: { customRender: 'nameShow' }
+        title: '购买数量',
+        dataIndex: 'commodityNum',
+        width: 120,
+        customRender: text => `${Number(text || 1)} 桶`
+      }, {
+        title: '订单价格',
+        dataIndex: 'orderPrice',
+        width: 130,
+        customRender: text => text === null || text === undefined ? '- -' : '￥' + Number(text).toFixed(2)
+      }, {
+        title: '水票数量',
+        dataIndex: 'ticketNum',
+        width: 120,
+        customRender: text => `${Number(text || 0)} 张`
+      }, {
+        title: '购买人',
+        dataIndex: 'userName',
+        width: 140,
+        scopedSlots: { customRender: 'userNameShow' }
+      }, {
+        title: '收货人', dataIndex: 'taskUserName', width: 130, customRender: textOrEmpty
+      }, {
+        title: '联系方式', dataIndex: 'phone', width: 150, customRender: textOrEmpty
+      }, {
+        title: '收货地址',
+        dataIndex: 'address',
+        width: 300,
+        scopedSlots: { customRender: 'addressShow' }
       }, {
         title: '订单状态',
         dataIndex: 'orderStatus',
-        customRender: (text, row, index) => {
-          switch (text) {
-            case '0':
-              return <a-tag>正在支付</a-tag>
-            case '1':
-              return <a-tag>已完成</a-tag>
-            case '2':
-              return <a-tag>拼单失败</a-tag>
-            case '3':
-              return <a-tag>已收货</a-tag>
-            default:
-              return '- -'
-          }
-        }
-      }, {
-        title: '商品类型',
-        ellipsis: true,
-        dataIndex: 'typeName',
-        customRender: (text, row, index) => {
-          if (text !== null) {
-            return text
-          } else {
-            return '- -'
-          }
-        }
-      }, {
-        title: '订单价格',
-        ellipsis: true,
-        dataIndex: 'orderPrice',
-        customRender: (text, row, index) => {
-          if (text !== null) {
-            return '￥' + text
-          } else {
-            return '- -'
-          }
-        }
-      }, {
-        title: '购买人',
-        ellipsis: true,
-        dataIndex: 'userName',
-        scopedSlots: { customRender: 'userNameShow' }
-      }, {
-        title: '联系方式',
-        ellipsis: true,
-        dataIndex: 'phone'
-      }, {
-        title: '收获地址',
-        dataIndex: 'address',
-        scopedSlots: { customRender: 'addressShow' }
-      }, {
-        title: '下单时间',
-        ellipsis: true,
-        dataIndex: 'createDate',
-        customRender: (text, row, index) => {
-          if (text !== null) {
-            return text
-          } else {
-            return '- -'
-          }
-        }
+        width: 110,
+        customRender: orderStatusLabel
       }, {
         title: '操作',
         dataIndex: 'operation',
+        width: 80,
+        fixed: 'right',
         scopedSlots: {customRender: 'operation'}
       }]
     }
@@ -216,6 +168,21 @@ export default {
     this.fetch()
   },
   methods: {
+    orderRowClass (record) {
+      switch (String(record.orderStatus)) {
+        case '3':
+          return 'order-row-completed'
+        case '1':
+          return 'order-row-pending'
+        case '2':
+        case '4':
+          return 'order-row-cancelled'
+        case '0':
+          return 'order-row-unpaid'
+        default:
+          return ''
+      }
+    },
     view (row) {
       this.orderView.data = row
       this.orderView.visiable = true
@@ -331,6 +298,7 @@ export default {
         this.dataSource = data.records
         this.pagination = pagination
         // 数据加载完毕，关闭loading
+      }).finally(() => {
         this.loading = false
       })
     }
@@ -340,4 +308,19 @@ export default {
 </script>
 <style lang="less" scoped>
 @import "../../../../static/less/Common";
+.order-cell {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.order-list /deep/ .ant-table-tbody > tr.order-row-pending > td { background-color: #e6f7ff; }
+.order-list /deep/ .ant-table-tbody > tr.order-row-pending:hover > td { background-color: #bae7ff; }
+.order-list /deep/ .ant-table-tbody > tr.order-row-completed > td { background-color: #f6ffed; }
+.order-list /deep/ .ant-table-tbody > tr.order-row-completed:hover > td { background-color: #d9f7be; }
+.order-list /deep/ .ant-table-tbody > tr.order-row-cancelled > td { background-color: #fff1f0; }
+.order-list /deep/ .ant-table-tbody > tr.order-row-cancelled:hover > td { background-color: #ffccc7; }
+.order-list /deep/ .ant-table-tbody > tr.order-row-unpaid > td { background-color: #fffbe6; }
+.order-list /deep/ .ant-table-tbody > tr.order-row-unpaid:hover > td { background-color: #fff1b8; }
 </style>

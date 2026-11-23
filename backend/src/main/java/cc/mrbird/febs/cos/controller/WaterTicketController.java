@@ -6,6 +6,8 @@ import cc.mrbird.febs.cos.entity.WaterTicketPackage;
 import cc.mrbird.febs.cos.service.WaterTicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.apache.shiro.authz.UnauthorizedException;
+import cc.mrbird.febs.system.domain.User;
 
 import java.util.List;
 
@@ -15,22 +17,36 @@ import java.util.List;
 public class WaterTicketController {
     private final WaterTicketService waterTicketService;
 
-    @GetMapping("/packages")
-    public R listPackages() {
-        return R.ok(waterTicketService.listForShopUser(FebsUtil.getCurrentUser().getUserId().intValue()));
+    @GetMapping("/admin/packages")
+    public R listAllPackagesForAdmin() {
+        requirePlatformAdmin();
+        return R.ok(waterTicketService.listAllPackages());
     }
 
-    @PostMapping("/packages")
-    public R savePackage(@RequestBody WaterTicketPackage ticketPackage) {
-        return R.ok(waterTicketService.savePackage(FebsUtil.getCurrentUser().getUserId().intValue(), ticketPackage));
+    @PostMapping("/admin/packages")
+    public R savePackageForAdmin(WaterTicketPackage ticketPackage) {
+        requirePlatformAdmin();
+        return R.ok(waterTicketService.savePackageAsAdmin(ticketPackage));
     }
 
-    @DeleteMapping("/packages/{id}")
-    public R deletePackage(@PathVariable Integer id) {
-        WaterTicketPackage old = waterTicketService.listForShopUser(FebsUtil.getCurrentUser().getUserId().intValue())
-                .stream().filter(item -> id.equals(item.getId())).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("水票套餐不存在或无权删除"));
-        old.setStatus(0);
-        return R.ok(waterTicketService.savePackage(FebsUtil.getCurrentUser().getUserId().intValue(), old));
+    @DeleteMapping("/admin/packages/{id}")
+    public R deletePackageForAdmin(@PathVariable Integer id) {
+        requirePlatformAdmin();
+        return R.ok(waterTicketService.disablePackageAsAdmin(id));
+    }
+
+    @GetMapping("/admin/accounts/{userId}")
+    public R listUserAccounts(@PathVariable Integer userId) {
+        requirePlatformAdmin();
+        return R.ok(waterTicketService.listAccounts(userId));
+    }
+
+    private void requirePlatformAdmin() {
+        User user = FebsUtil.getCurrentUser();
+        String roleIds = user.getRoleId();
+        if (roleIds == null || !java.util.Arrays.stream(roleIds.split(","))
+                .map(String::trim).anyMatch(id -> "1".equals(id) || "74".equals(id))) {
+            throw new UnauthorizedException("仅管理员可管理水票");
+        }
     }
 }

@@ -70,10 +70,6 @@ public class CommodityInfo implements Serializable {
      */
     private String delFlag;
 
-    /**
-     * 所属商家
-     */
-    private Integer shopId;
 
     /**
      * 商品类型

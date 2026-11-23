@@ -44,9 +44,6 @@
         <a-col :span="8"><b>规格：</b>
           {{ commodityData.model }}
         </a-col>
-        <a-col :span="8"><b>所属商家：</b>
-          {{ commodityData.shopName }}
-        </a-col>
       </a-row>
       <br/>
       <br/>

@@ -21,17 +21,6 @@
                 <a-input v-model="queryParams.sex"/>
               </a-form-item>
             </a-col>
-            <a-col :md="8" :sm="24">
-              <a-form-item
-                label="用户类型"
-                :labelCol="{span: 5}"
-                :wrapperCol="{span: 18, offset: 1}">
-                <a-select v-model="queryParams.type" allowClear>
-                  <a-select-option value="1">普通用户</a-select-option>
-                  <a-select-option value="2">商铺</a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
           </div>
           <span style="float: right; margin-top: 3px;">
             <a-button type="primary" @click="search">查询</a-button>
@@ -76,7 +65,7 @@
           </template>
         </template>
         <template slot="operation" slot-scope="text, record">
-          <a-icon v-if="record.type == 1" type="reconciliation" @click="view(record)" title="订 单"></a-icon>
+          <a-icon type="reconciliation" @click="view(record)" title="用户详情" aria-label="用户详情"></a-icon>
         </template>
       </a-table>
     </div>
@@ -168,19 +157,6 @@ export default {
             </template>
             <a-avatar shape="square" icon="user" src={ record.avatar } />
           </a-popover>
-        }
-      }, {
-        title: '用户类型',
-        dataIndex: 'type',
-        customRender: (text, row, index) => {
-          switch (text) {
-            case 1:
-              return <a-tag>普通用户</a-tag>
-            case 2:
-              return <a-tag>商铺</a-tag>
-            default:
-              return '- -'
-          }
         }
       }, {
         title: '创建时间',

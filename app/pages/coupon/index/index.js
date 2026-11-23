@@ -1,84 +1,35 @@
-const app = getApp();
-let http = require('../../../utils/request')
+const app = getApp()
+const http = require('../../../utils/request')
+
 Page({
-    data: {
-        StatusBar: app.globalData.StatusBar,
-        imageBaseUrl: app.globalData.imageBaseUrl,
-        CustomBar: app.globalData.CustomBar,
-        TabbarBot: app.globalData.tabbar_bottom,
-        TabCur: 1, scrollLeft: 0,
-        SortMenu: [{ id: 1, name: "未使用" }, { id: 2, name: "已使用" }, { id: 3, name: "已过期" }],
-        postList: []
-    },
-    onLoad: function (options) {
-        let that = this;
-    },
-    tabSelect(e) {
-        console.log(e.currentTarget.dataset.id);
-        this.setData({
-            TabCur: e.currentTarget.dataset.id,
-            scrollLeft: (e.currentTarget.dataset.id - 1) * 60
-        })
-    },
-    add() {
-        wx.navigateTo({
-            url: '/pages/coupon/add/index'
-        });
-    },
-    postDetail(event) {
-        wx.navigateTo({
-            url: '/pages/coupon/detail/index?postId=' + event.currentTarget.dataset.postid + ''
-        });
-    },
-    timeFormat(time) {
-        var nowTime = new Date();
-        var day = nowTime.getDate();
-        var hours = parseInt(nowTime.getHours());
-        var minutes = nowTime.getMinutes();
-        // 开始分解付入的时间
-        var timeday = time.substring(8, 10);
-        var timehours = parseInt(time.substring(11, 13));
-        var timeminutes = time.substring(14, 16);
-        var d_day = Math.abs(day - timeday);
-        var d_hours = hours - timehours;
-        var d_minutes = Math.abs(minutes - timeminutes);
-        if (d_day <= 1) {
-            switch (d_day) {
-                case 0:
-                    if (d_hours == 0 && d_minutes > 0) {
-                        return d_minutes + '分钟前';
-                    } else if (d_hours == 0 && d_minutes == 0) {
-                        return '1分钟前';
-                    } else {
-                        return d_hours + '小时前';
-                    }
-                    break;
-                case 1:
-                    if (d_hours < 0) {
-                        return (24 + d_hours) + '小时前';
-                    } else {
-                        return d_day + '天前';
-                    }
-                    break;
-            }
-        } else if (d_day > 1 && d_day < 10) {
-            return d_day + '天前';
-        } else {
-            return time;
-        }
-    },
-    getPostInfo() {
-        http.get('getPostList').then((r) => {
-            r.data.forEach(item => {
-                item.image = item.images.split(',')[0]
-                item.days = this.timeFormat(item.createDate)
-            });
-            if (r.data !== null) {
-                this.setData({ postList: r.data })
-            }
-        })
-    },
-    onShow() {
-        this.getPostInfo()
-    }
-});
+  data: {
+    StatusBar: app.globalData.StatusBar,
+    CustomBar: app.globalData.CustomBar,
+    banner: 'https://www.crbeverage.com/indexBanner/2023-07-20/583fd836-c200-4311-9ef7-9d2e8dece839.jpg',
+    tabs: [{ id: 'all', label: '全部' }, { id: 'available', label: '待领取' }, { id: 'claimed', label: '已领取' }],
+    current: 'all', coupons: [], userInfo: null
+  },
+  onShow() { this.setData({ userInfo: wx.getStorageSync('userInfo') || null }); this.loadCoupons() },
+  back() { wx.navigateBack() },
+  selectTab(e) { this.setData({ current: e.currentTarget.dataset.id }); this.loadCoupons() },
+  loadCoupons() {
+    const userId = this.data.userInfo && this.data.userInfo.id
+    return http.get('coupon/list', { userId, status: this.data.current }, false).then(r => {
+      this.setData({ coupons: (r.data || []).map(item => ({
+        ...item,
+        valueText: item.discountType === 'RATE' ? `${Number(item.discountValue) * 10}折` : `¥${Number(item.discountValue).toFixed(0)}`,
+        conditionText: Number(item.minSpend) > 0 ? `满${Number(item.minSpend)}元可用` : '无门槛可用',
+        scopeText: item.couponType === 'ALL' ? '全场通用优惠券' : `指定商品：${(item.commodityNames || []).join('、')}`,
+        availableText: item.endTime ? `领取后${item.validDays}天内有效` : `领取后${item.validDays}天内有效`
+      })) })
+    }).catch(() => this.setData({ coupons: [] }))
+  },
+  claim(e) {
+    const userInfo = this.data.userInfo
+    if (!userInfo) { wx.showToast({ title: '请先登录', icon: 'none' }); return }
+    http.post('coupon/claim', { userId: userInfo.id, couponId: e.currentTarget.dataset.id }, false).then(() => {
+      wx.showToast({ title: '领取成功', icon: 'success' })
+      this.loadCoupons()
+    }).catch(() => {})
+  }
+})

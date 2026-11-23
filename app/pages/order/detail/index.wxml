@@ -1,2 +1,22 @@
-<!--pages/order/detail/index.wxml-->
-<text>pages/order/detail/index.wxml</text>
+<view class="cu-custom" style="height:{{CustomBar}}px;">
+  <view class="cu-bar fixed none-bg text-white bg-img" style="height:{{CustomBar}}px;padding-top:{{StatusBar}}px;">
+    <navigator class="action canui-head-title" open-type="navigateBack"><text class="icon-back"></text>订单详情</navigator>
+  </view>
+</view>
+<view wx:if="{{order}}" class="padding">
+  <view class="text-xl text-green padding-bottom">{{order.statusLabel}}</view>
+  <view class="bg-white padding radius">
+    <view>订单编号：{{order.orderCode}}</view>
+    <view class="margin-top-sm">下单时间：{{order.orderDate}}</view>
+    <view class="margin-top-sm">商品：{{order.name}}</view>
+    <image wx:if="{{order.image}}" src="{{imageBaseUrl}}{{order.image}}" mode="aspectFit" style="width:160rpx;height:160rpx" />
+    <view class="margin-top-sm">购买数量：{{order.commodityNum}} 桶</view>
+    <view class="margin-top-sm">使用水票：{{order.ticketNum}} 张</view>
+    <view class="margin-top-sm">订单价格：￥{{order.orderPrice}}</view>
+    <view class="margin-top-sm">收货人：{{order.takeUser}}</view>
+    <view class="margin-top-sm">联系方式：{{order.phone}}</view>
+    <view class="margin-top-sm">收货地址：{{order.address}}</view>
+    <view wx:if="{{order.finishDate}}" class="margin-top-sm">完成时间：{{order.finishDate}}</view>
+  </view>
+  <button wx:if="{{order.orderStatus == 1}}" class="cu-btn bg-green margin-top" bindtap="receipt">确认收货</button>
+</view>

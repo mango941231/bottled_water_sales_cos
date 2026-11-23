@@ -1,51 +1,33 @@
-<!-- 状态栏区域 -->
 <view class="cu-custom" style="height:{{CustomBar}}px;">
-    <view class="cu-bar fixed none-bg text-white bg-img" style="height:{{CustomBar}}px;padding-top:{{StatusBar}}px;">
-        <navigator class='action canui-head-title' open-type="navigateBack" hover-class="none">
-            <text class='icon-back'></text>
-            社区论坛
-        </navigator>
-    </view>
+  <view class="cu-bar fixed bg-white" style="height:{{CustomBar}}px;padding-top:{{StatusBar}}px;">
+    <view class="action" bindtap="back"><text class="icon-back"></text> 优惠中心</view>
+  </view>
 </view>
-<view class="box" style="top: {{CustomBar}}px;">
-    <!-- <scroll-view scroll-x class="bg-white nav">
-        <view class='flex text-center'>
-            <view class="cu-item flex-sub {{item.id==TabCur?'text-red cur':''}}" wx:for="{{SortMenu}}" wx:key="item.id" bindtap='tabSelect' data-id="{{item.id}}">
-                {{item.name}}
-            </view>
-        </view>
-    </scroll-view> -->
-    <view class="cu-card article">
-        <view class="cu-card case">
-            <view class="cu-item shadow" wx:for="{{postList}}" bindtap='postDetail' data-postId='{{item.id}}'>
-                <view class="image">
-                    <!-- mode="widthFix" -->
-                    <image src="{{imageBaseUrl}}{{item.image}}" style="height: 150px"></image>
-                    <view class="cu-tag bg-blue">热度 {{item.replyNum}}</view>
-                    <view class="cu-bar bg-shadeBottom">
-                        <text class="text-cut">
-                            {{item.title}}
-                        </text>
-                    </view>
-                </view>
-                <view class="cu-list menu-avatar">
-                    <view class="cu-item">
-                        <view class="cu-avatar round lg" style="background-image:url({{item.avatar}});"></view>
-                        <view class="content flex-sub" style="margin-top: 15px">
-                            <view class="text-grey">{{item.userName}}</view>
-                            <view class="text-gray text-sm flex justify-between" style="margin-top: 10px">
-                                {{item.days}}
-                            </view>
-                        </view>
-                    </view>
-                </view>
-            </view>
-        </view>
+<view class="coupon-page" style="padding-top:{{CustomBar}}px;">
+  <view class="coupon-banner">
+    <view class="banner-title">领券享优惠</view>
+    <view class="banner-subtitle">好券上新 · 下单立减</view>
+    <view class="banner-ticket">¥</view>
+  </view>
+  <view class="coupon-tabs">
+    <view wx:for="{{tabs}}" wx:key="id" class="coupon-tab {{current === item.id ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="selectTab">{{item.label}}</view>
+  </view>
+  <view class="coupon-list">
+    <view class="coupon-card" wx:for="{{coupons}}" wx:key="id">
+      <view class="coupon-value">
+        <view class="value-text">{{item.valueText}}</view>
+        <view class="condition-text">{{item.conditionText}}</view>
+      </view>
+      <view class="coupon-content">
+        <view class="coupon-tag">{{item.couponType === 'ALL' ? '全场优惠' : '指定商品'}}</view>
+        <view class="coupon-name">{{item.name}}</view>
+        <view class="coupon-scope">{{item.scopeText}}</view>
+        <view class="coupon-valid">{{item.availableText}}</view>
+      </view>
+      <button wx:if="{{!item.claimed && item.available}}" class="claim-button" data-id="{{item.id}}" bindtap="claim">立即领取</button>
+      <view wx:elif="{{item.claimed}}" class="claimed-label">已领取</view>
+      <view wx:else class="claimed-label">暂不可领</view>
     </view>
-</view>
-<view class="canui-foor-fixed {{TabbarBot=='y'?'canui-tabbar-bottom':''}}">
-    <button class="cu-btn canui-color-gradual shadow-blur round lg" bindtap='add'>
-        <text class="icon-add"></text>
-        发布贴子
-    </button>
+    <view wx:if="{{coupons.length === 0}}" class="empty">暂无优惠券</view>
+  </view>
 </view>

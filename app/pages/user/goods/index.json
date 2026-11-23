@@ -1,5 +1,0 @@
-{
-  "usingComponents": {
-    "van-empty": "../../../dist/empty/index"
-  }
-}

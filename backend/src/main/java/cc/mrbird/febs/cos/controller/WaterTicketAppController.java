@@ -14,6 +14,11 @@ import java.util.Map;
 public class WaterTicketAppController {
     private final WaterTicketService waterTicketService;
 
+    @GetMapping("/packages/all")
+    public R allPackages() {
+        return R.ok(waterTicketService.listAvailablePackages());
+    }
+
     @GetMapping("/packages")
     public R packages(@RequestParam Integer commodityId) {
         return R.ok(waterTicketService.listForCommodity(commodityId));

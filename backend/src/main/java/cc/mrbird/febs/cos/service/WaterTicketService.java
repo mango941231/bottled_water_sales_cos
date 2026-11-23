@@ -5,7 +5,6 @@ import cc.mrbird.febs.cos.dao.WaterTicketPackageMapper;
 import cc.mrbird.febs.cos.dao.WaterTicketUsageMapper;
 import cc.mrbird.febs.cos.entity.*;
 import cc.mrbird.febs.cos.service.ICommodityInfoService;
-import cc.mrbird.febs.cos.service.IShopInfoService;
 import cc.mrbird.febs.cos.service.IUserInfoService;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,6 @@ public class WaterTicketService {
     private final WaterTicketAccountMapper accountMapper;
     private final WaterTicketUsageMapper usageMapper;
     private final ICommodityInfoService commodityService;
-    private final IShopInfoService shopService;
     private final IUserInfoService userService;
 
     public List<WaterTicketPackage> listForCommodity(Integer commodityId) {
@@ -32,38 +30,72 @@ public class WaterTicketService {
                 .orderByAsc(WaterTicketPackage::getPrice));
     }
 
-    public List<WaterTicketPackage> listForShopUser(Integer systemUserId) {
-        ShopInfo shop = getShopForSystemUser(systemUserId);
+    public List<WaterTicketPackage> listAllPackages() {
         return packageMapper.selectList(Wrappers.<WaterTicketPackage>lambdaQuery()
-                .eq(WaterTicketPackage::getShopId, shop.getId())
                 .orderByDesc(WaterTicketPackage::getCreateTime));
     }
 
-    public WaterTicketPackage savePackage(Integer systemUserId, WaterTicketPackage ticketPackage) {
-        ShopInfo shop = getShopForSystemUser(systemUserId);
+    public List<Map<String, Object>> listAvailablePackages() {
+        List<WaterTicketPackage> packages = packageMapper.selectList(Wrappers.<WaterTicketPackage>lambdaQuery()
+                .eq(WaterTicketPackage::getStatus, 1).orderByDesc(WaterTicketPackage::getCreateTime));
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (WaterTicketPackage ticketPackage : packages) {
+            CommodityInfo commodity = commodityService.getById(ticketPackage.getCommodityId());
+            if (commodity == null || !"1".equals(commodity.getOnPut())) continue;
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", ticketPackage.getId());
+            item.put("commodityId", ticketPackage.getCommodityId());
+            item.put("commodityName", commodity.getName());
+            item.put("commodityImage", commodity.getImages());
+            item.put("name", ticketPackage.getName());
+            item.put("ticketNum", ticketPackage.getTicketNum());
+            item.put("validDays", ticketPackage.getValidDays());
+            item.put("originalPrice", ticketPackage.getOriginalPrice() == null ? ticketPackage.getPrice() : ticketPackage.getOriginalPrice());
+            item.put("discountPrice", ticketPackage.getDiscountPrice() == null ? ticketPackage.getPrice() : ticketPackage.getDiscountPrice());
+            result.add(item);
+        }
+        return result;
+    }
+
+    public WaterTicketPackage savePackageAsAdmin(WaterTicketPackage ticketPackage) {
         CommodityInfo commodity = commodityService.getById(ticketPackage.getCommodityId());
-        if (commodity == null || !shop.getId().equals(commodity.getShopId())) {
-            throw new IllegalArgumentException("只能为本店商品创建水票套餐");
+        if (commodity == null) {
+            throw new IllegalArgumentException("关联商品不存在");
         }
-        if (ticketPackage.getTicketNum() == null || ticketPackage.getTicketNum() <= 0 ||
-                ticketPackage.getValidDays() == null || ticketPackage.getValidDays() <= 0 ||
-                ticketPackage.getPrice() == null || ticketPackage.getPrice().compareTo(BigDecimal.ZERO) < 0 ||
-                ticketPackage.getName() == null || ticketPackage.getName().trim().isEmpty()) {
-            throw new IllegalArgumentException("请填写有效的套餐名称、桶数、售价和有效天数");
+        if (ticketPackage.getDiscountPrice() != null) ticketPackage.setPrice(ticketPackage.getDiscountPrice());
+        if (ticketPackage.getOriginalPrice() == null) ticketPackage.setOriginalPrice(ticketPackage.getPrice());
+        if (ticketPackage.getDiscountPrice() == null) ticketPackage.setDiscountPrice(ticketPackage.getPrice());
+        validatePackage(ticketPackage);
+        if (ticketPackage.getDiscountPrice().compareTo(ticketPackage.getOriginalPrice()) > 0) {
+            throw new IllegalArgumentException("优惠价不能高于原价");
         }
-        ticketPackage.setShopId(shop.getId());
         ticketPackage.setName(ticketPackage.getName().trim());
         if (ticketPackage.getStatus() == null) ticketPackage.setStatus(1);
         if (ticketPackage.getId() == null) {
             packageMapper.insert(ticketPackage);
         } else {
             WaterTicketPackage old = packageMapper.selectById(ticketPackage.getId());
-            if (old == null || !shop.getId().equals(old.getShopId())) {
-                throw new IllegalArgumentException("水票套餐不存在或无权修改");
-            }
+            if (old == null) throw new IllegalArgumentException("水票套餐不存在");
             packageMapper.updateById(ticketPackage);
         }
         return ticketPackage;
+    }
+
+    public WaterTicketPackage disablePackageAsAdmin(Integer id) {
+        WaterTicketPackage ticketPackage = packageMapper.selectById(id);
+        if (ticketPackage == null) throw new IllegalArgumentException("水票套餐不存在");
+        ticketPackage.setStatus(0);
+        packageMapper.updateById(ticketPackage);
+        return ticketPackage;
+    }
+
+    private void validatePackage(WaterTicketPackage ticketPackage) {
+        if (ticketPackage.getTicketNum() == null || ticketPackage.getTicketNum() <= 0 ||
+                ticketPackage.getValidDays() == null || ticketPackage.getValidDays() <= 0 ||
+                ticketPackage.getPrice() == null || ticketPackage.getPrice().compareTo(BigDecimal.ZERO) < 0 ||
+                ticketPackage.getName() == null || ticketPackage.getName().trim().isEmpty()) {
+            throw new IllegalArgumentException("请填写有效的套餐名称、桶数、售价和有效天数");
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -77,7 +109,6 @@ public class WaterTicketService {
         Date now = new Date();
         WaterTicketAccount account = new WaterTicketAccount();
         account.setUserId(userId);
-        account.setShopId(ticketPackage.getShopId());
         account.setCommodityId(ticketPackage.getCommodityId());
         account.setPackageId(ticketPackage.getId());
         account.setPackageName(ticketPackage.getName());
@@ -110,6 +141,7 @@ public class WaterTicketService {
             row.put("commodityName", commodity == null ? "商品已删除" : commodity.getName());
             row.put("totalNum", account.getTotalNum());
             row.put("remainingNum", account.getRemainingNum());
+            row.put("status", account.getStatus());
             row.put("expireTime", account.getExpireTime());
             row.put("createTime", account.getCreateTime());
             row.put("expired", account.getExpireTime().before(new Date()));
@@ -130,11 +162,10 @@ public class WaterTicketService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public int consume(Integer userId, Integer shopId, Integer commodityId, int requested, String orderCode) {
+    public int consume(Integer userId, Integer commodityId, int requested, String orderCode) {
         if (requested <= 0) return 0;
         List<WaterTicketAccount> accounts = accountMapper.selectList(Wrappers.<WaterTicketAccount>lambdaQuery()
                 .eq(WaterTicketAccount::getUserId, userId)
-                .eq(WaterTicketAccount::getShopId, shopId)
                 .eq(WaterTicketAccount::getCommodityId, commodityId)
                 .eq(WaterTicketAccount::getStatus, 1)
                 .gt(WaterTicketAccount::getExpireTime, new Date())
@@ -152,7 +183,6 @@ public class WaterTicketService {
                 usage.setAccountId(account.getId());
                 usage.setOrderCode(orderCode);
                 usage.setUserId(userId);
-                usage.setShopId(shopId);
                 usage.setCommodityId(commodityId);
                 usage.setTicketNum(use);
                 usage.setCreateTime(new Date());
@@ -165,9 +195,4 @@ public class WaterTicketService {
         return requested;
     }
 
-    public ShopInfo getShopForSystemUser(Integer systemUserId) {
-        ShopInfo shop = shopService.getOne(Wrappers.<ShopInfo>lambdaQuery().eq(ShopInfo::getSysUserId, systemUserId));
-        if (shop == null) throw new IllegalArgumentException("当前账号没有关联商铺");
-        return shop;
-    }
 }

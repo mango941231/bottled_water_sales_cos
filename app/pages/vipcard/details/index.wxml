@@ -14,7 +14,7 @@
                 <view class='bg-shadeTop radius'>
                     <view class="canui-card-head">
                         <view class="cu-avatar round" style="background-image:url(https://image.weilanwl.com/img/square-1.jpg);"></view>
-                        <text class="canui-card-name">某某某店铺会员卡</text>
+                        <text class="canui-card-name">会员卡</text>
                     </view>
                     <view class="canui-card-time-box">
                         <text class="canui-card-time">有效期：无限期</text>
@@ -66,10 +66,10 @@
 
         <view class="cu-item arrow">
             <view class='content'>
-                <text class='text-black'>店铺主页</text>
+                <text class='text-black'>首页</text>
             </view>
             <view class='action'>
-                <text class='text-gray text-sm'>查看店铺</text>
+                <text class='text-gray text-sm'>查看首页</text>
             </view>
         </view>
 

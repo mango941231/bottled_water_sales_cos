@@ -19,41 +19,28 @@
         ci.images,
         ci.content,
         ci.on_put AS onPut,
-        si.introduction,
-        si.tag,
-        ct.type_name,
+        ct.type_name AS typeName,
         ui.user_name AS userName,
         ai.phone,
         ai.address,
-        ui.avatar,
-        su.user_name AS shopName,
-        su.avatar AS shopAvatar
+        ui.avatar
         FROM
         evaluation eva
-        LEFT JOIN order_detail od ON (od.id = eva.order_id )
-        LEFT JOIN order_info oi ON (oi.code = od.code)
+        LEFT JOIN order_info oi ON (oi.id = eva.order_id)
         LEFT JOIN commodity_info ci ON ( ci.id = oi.commodity_id )
         LEFT JOIN commodity_type ct ON ( ct.id = ci.type )
-        LEFT JOIN shop_info si ON ( si.id = ci.shop_id )
-        LEFT JOIN user_info ui ON ( ui.id = od.user_id )
-        LEFT JOIN address_info ai ON (ai.id = od.address_id)
-        LEFT JOIN user_info su ON ( su.id = si.user_id )
+        LEFT JOIN user_info ui ON ( ui.id = eva.user_id )
+        LEFT JOIN address_info ai ON (ai.id = oi.address_id)
         WHERE
         1 = 1
         <if test="evaluation.userName != null and evaluation.userName != ''">
             AND ui.user_name LIKE CONCAT('%',#{evaluation.userName},'%')
-        </if>
-        <if test="evaluation.shopName != null and evaluation.shopName != ''">
-            AND su.user_name LIKE CONCAT('%',#{evaluation.shopName},'%')
         </if>
         <if test="evaluation.commodityName != null and evaluation.commodityName != ''">
             AND ci.`name` LIKE CONCAT('%',#{evaluation.commodityName},'%')
         </if>
         <if test="evaluation.type != null and evaluation.type != ''">
             AND ci.type = #{evaluation.type}
-        </if>
-        <if test="evaluation.shopId != null">
-            AND si.sys_user_id = #{evaluation.shopId}
         </if>
         ORDER BY eva.create_date
     </select>
@@ -71,8 +58,7 @@
         FROM
         evaluation eva
         LEFT JOIN user_info ui ON ( ui.id = eva.user_id )
-        LEFT JOIN order_detail od ON (eva.order_id = od.id)
-        LEFT JOIN order_info oi ON (oi.code = od.code)
+        LEFT JOIN order_info oi ON (oi.id = eva.order_id)
         WHERE
             oi.id = #{ id }
     </select>
@@ -90,8 +76,7 @@
         FROM
         evaluation eva
         LEFT JOIN user_info ui ON ( ui.id = eva.user_id )
-        LEFT JOIN order_detail od ON (od.id = eva.order_id)
-        LEFT JOIN order_info oi ON (oi.code = od.code)
+        LEFT JOIN order_info oi ON (oi.id = eva.order_id)
         WHERE
         oi.commodity_id = #{ id }
     </select>

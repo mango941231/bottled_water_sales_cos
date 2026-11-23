@@ -38,21 +38,7 @@ public interface IOrderInfoService extends IService<OrderInfo> {
      */
     LinkedHashMap<String, Object> home();
 
-    /**
-     * 根据商铺获取订单统计
-     *
-     * @param shopId 商铺ID
-     * @return 结果
-     */
-    List<LinkedHashMap<String, Object>> shopOrderRateByComm(Integer shopId);
 
-    /**
-     * 商家首页统计
-     *
-     * @param shopId 商家ID
-     * @return 结果
-     */
-    LinkedHashMap<String, Object> selectHomeDataByShop(Integer shopId);
 
     /**
      * 获取订单详情
@@ -86,11 +72,4 @@ public interface IOrderInfoService extends IService<OrderInfo> {
      */
     List<LinkedHashMap<String, Object>> getOrderListByUserId(Integer userId);
 
-    /**
-     * 根据用户获取卖出的订单
-     *
-     * @param userId 用户ID
-     * @return 结果
-     */
-    List<LinkedHashMap<String, Object>> getOrderByUserId(@Param("userId") Integer userId);
 }

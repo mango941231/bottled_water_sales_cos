@@ -78,11 +78,11 @@
 </view>
 <!-- TabbarBot为适配全面屏的，如果是全面屏，则底部多出一截空白 -->
 <view class="cu-bar bg-white tabbar border shop canui-foor-fixed {{TabbarBot=='y'?'canui-tabbar-bottom':''}}">
-    <view class="action text-grey" bindtap='shopDetail'>
-        <view class='icon-shop text-red'></view>
-        店铺
+    <view class="action text-grey" bindtap='homeView'>
+        <view class='icon-home text-red'></view>
+        首页
     </view>
-    <button class="action text-grey" bindtap='message'>
+    <button class="action text-grey" open-type="contact">
         <view class='icon-service'></view>
         客服
     </button>
