@@ -7,15 +7,7 @@ Page({
 		CustomBar: app.globalData.CustomBar,
 		hidden: true,
 		current: 0,lines: 0,
-		swiperlist: [{
-			id: 0,
-			url: 'https://www.crbeverage.com/indexBanner/2023-07-20/583fd836-c200-4311-9ef7-9d2e8dece839.jpg',
-			type: 1
-		}, {
-			id: 1,
-			url: 'https://www.crbeverage.com/ybPorduct/f1225d1d-77a5-4891-9cec-6711429349ad.png',
-			type: 2
-		}],
+		swiperlist: [],
 		iconList: [{
 			id: 1,
 			iconClass: 'icon-ticket',
@@ -46,6 +38,16 @@ Page({
 	    // });
 		this.home()
 	},
+	onShow() { this.loadBanners() },
+	loadBanners() {
+		const sequence = (this.bannerSequence || 0) + 1
+		this.bannerSequence = sequence
+		return http.get('mini-program/banners', {}, false).then(r => {
+			if (sequence !== this.bannerSequence) return
+			const banners = (r.data || []).map(item => ({ ...item, url: this.resolveImageUrl(item.imageUrl) }))
+			this.setData({ swiperlist: banners, current: 0 })
+		}).catch(() => {})
+	},
 	onProductImageError(e) {
 		const id = e.currentTarget.dataset.id
 		this.setData({
@@ -75,16 +77,6 @@ Page({
 		this.setData({
 			current:e.detail.current
 		});
-	},
-	swipclick: function (e) {
-		let that = this;
-		var swip = that.data.swiperlist[that.data.current];
-		console.log(swip);
-		if (swip.type === 1) {
-			wx.navigateTo({
-				url: '/pages/home/doc/index?id=' + swip.id
-			});
-		}
 	},
 	itemckcred: function (e) {
 		let that = this;

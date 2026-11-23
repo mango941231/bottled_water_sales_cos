@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,6 +14,9 @@ import java.util.List;
  * @author FanK
  */
 public interface OrderInfoMapper extends BaseMapper<OrderInfo> {
+
+    @Select("SELECT * FROM order_info WHERE id = #{id} FOR UPDATE")
+    OrderInfo selectForUpdate(@Param("id") Integer id);
 
     /**
      * 分页查询订单信息

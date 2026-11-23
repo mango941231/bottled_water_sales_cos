@@ -16,9 +16,9 @@
 </view> -->
 
 <!--轮播区域-->
-<swiper class="screen-swiper square-dot shadow-warp bg-white" indicator-dots="true" circular="true" autoplay="true" interval="5000" duration="500" bindchange="swiperchange">
-    <swiper-item wx:for="{{swiperlist}}" wx:key="item.id">
-        <image src="{{item.url}}" mode='aspectFill' bindtap="swipclick"></image>
+<swiper wx:if="{{swiperlist.length}}" current="{{current}}" class="screen-swiper square-dot shadow-warp bg-white" indicator-dots="{{swiperlist.length > 1}}" circular="{{swiperlist.length > 1}}" autoplay="{{swiperlist.length > 1}}" interval="5000" duration="500" bindchange="swiperchange">
+    <swiper-item wx:for="{{swiperlist}}" wx:key="id">
+        <image src="{{item.url}}" mode='aspectFill'></image>
     </swiper-item>
 </swiper>
 

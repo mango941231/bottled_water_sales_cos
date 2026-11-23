@@ -12,6 +12,8 @@
     <image wx:if="{{order.image}}" src="{{imageBaseUrl}}{{order.image}}" mode="aspectFit" style="width:160rpx;height:160rpx" />
     <view class="margin-top-sm">购买数量：{{order.commodityNum}} 桶</view>
     <view class="margin-top-sm">使用水票：{{order.ticketNum}} 张</view>
+    <view wx:if="{{order.userCouponId}}" class="margin-top-sm">优惠券：{{order.couponName}}</view>
+    <view wx:if="{{order.userCouponId}}" class="margin-top-sm">优惠券抵扣：￥{{order.couponDiscount}}</view>
     <view class="margin-top-sm">订单价格：￥{{order.orderPrice}}</view>
     <view class="margin-top-sm">收货人：{{order.takeUser}}</view>
     <view class="margin-top-sm">联系方式：{{order.phone}}</view>

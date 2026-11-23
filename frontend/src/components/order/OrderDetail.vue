@@ -13,6 +13,8 @@
           <a-col :sm="8" :xs="24"><b>订单价格：</b>￥{{ money(detail.orderPrice) }}</a-col>
           <a-col :sm="8" :xs="24"><b>使用水票数量：</b>{{ detail.ticketNum || 0 }} 张</a-col>
           <a-col :sm="8" :xs="24"><b>本次购买数量：</b>{{ detail.commodityNum || 1 }} 桶</a-col>
+          <a-col v-if="detail.userCouponId" :sm="16" :xs="24"><b>使用优惠券：</b>{{ detail.couponName }}</a-col>
+          <a-col v-if="detail.userCouponId" :sm="8" :xs="24"><b>优惠券抵扣：</b>￥{{ money(detail.couponDiscount) }}</a-col>
           <a-col :span="24"><b>剩余水票（本商品）：</b>{{ detail.ticketRemaining == null ? '- -' : detail.ticketRemaining + ' 张' }}
             <span class="hint">当前可用余额，不含已过期或已停用水票</span>
           </a-col>

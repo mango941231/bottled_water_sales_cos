@@ -14,7 +14,20 @@ Page({
         allPrice: 0,
         cashPrice: 0,
         totalTicketNum: 0,
-        userInfo: null
+        userInfo: null,
+        couponOptions: [],
+        availableCouponCount: 0,
+        selectedUserCouponId: null,
+        selectedCouponName: '',
+        couponDiscount: '0.00',
+        ticketDiscount: '0.00',
+        couponModal: false,
+        quoteLoading: true,
+        quoteError: false,
+        submitting: false
+    },
+    onShow() {
+        if (this.data.userInfo && this.data.orderList.length) this.refreshQuote()
     },
     onLoad: function (options) {
         
@@ -67,6 +80,7 @@ Page({
             this.setData({ orderList: [order], allPrice: allPrice.toFixed(2) })
             this.loadTicketBalances([order])
         }).catch((error) => {
+            this.setData({ quoteLoading: false, quoteError: true })
             wx.showToast({ title: error.message || '商品信息加载失败', icon: 'none' })
         })
     },
@@ -74,7 +88,7 @@ Page({
         http.get('selOrderListByOrderIds', { ids: orderIds.join(',') }).then((r) => {
             let allPrice = 0
             r.data.forEach(item => {
-                item.image = item.images.split(',')[0]
+                item.image = item.images ? item.images.split(',')[0] : ''
                 item.unitPrice = Number(item.price)
                 item.commodityNum = Number(item.commodityNum || 1)
                 item.ticketNum = 0
@@ -82,6 +96,9 @@ Page({
             });
             this.setData({ orderList: r.data, allPrice: allPrice.toFixed(2) })
             this.loadTicketBalances(r.data)
+        }).catch(error => {
+            this.setData({ quoteLoading: false, quoteError: true })
+            wx.showToast({ title: error.message || '购物车加载失败', icon: 'none' })
         })
     },
     loadTicketBalances(items) {
@@ -98,6 +115,7 @@ Page({
         })
     },
     adjustQuantity(e) {
+        if (this.data.submitting) return
         const index = Number(e.currentTarget.dataset.index)
         const delta = Number(e.currentTarget.dataset.delta)
         const orderList = this.data.orderList
@@ -108,6 +126,7 @@ Page({
         this.recalculate()
     },
     adjustTicket(e) {
+        if (this.data.submitting) return
         const index = Number(e.currentTarget.dataset.index)
         const delta = Number(e.currentTarget.dataset.delta)
         const orderList = this.data.orderList
@@ -120,30 +139,78 @@ Page({
         const allPrice = this.data.orderList.reduce((sum, item) => sum + item.unitPrice * item.commodityNum, 0)
         const cashPrice = this.data.orderList.reduce((sum, item) => sum + item.unitPrice * (item.commodityNum - item.ticketNum), 0)
         const totalTicketNum = this.data.orderList.reduce((sum, item) => sum + item.ticketNum, 0)
-        this.setData({ allPrice: allPrice.toFixed(2), cashPrice: cashPrice.toFixed(2), totalTicketNum })
+        this.setData({ allPrice: allPrice.toFixed(2), cashPrice: cashPrice.toFixed(2), totalTicketNum, couponDiscount: '0.00', quoteLoading: true })
+        return this.refreshQuote()
     },
-    submit() {
-        const cashPrice = this.data.orderList.reduce((sum, item) => sum + item.unitPrice * (item.commodityNum - item.ticketNum), 0)
-        wx.showLoading({
-            title: cashPrice > 0 ? '正在模拟支付' : '正在核销水票',
+    refreshQuote() {
+        const sequence = (this.quoteSequence || 0) + 1
+        this.quoteSequence = sequence
+        this.setData({ quoteLoading: true, quoteError: false })
+        return http.post('coupon/checkout', {
+            userId: this.data.userInfo.id,
+            userCouponId: this.data.selectedUserCouponId,
+            lines: this.data.orderList.map(item => ({ commodityId: item.id, commodityNum: item.commodityNum, ticketNum: item.ticketNum }))
+        }, false).then(r => {
+            if (sequence !== this.quoteSequence) return false
+            const quote = r.data
+            const options = (quote.coupons || []).map(item => ({
+                ...item,
+                valueText: item.discountType === 'RATE' ? `${Number((Number(item.discountValue) * 10).toFixed(2))}折` : `减${Number(item.discountValue).toFixed(2)}元`,
+                scopeText: item.couponType === 'ALL' ? '全场通用券' : '商品专用券 · 仅限指定商品',
+                conditionText: Number(item.minSpend) > 0 ? `适用商品满${Number(item.minSpend)}元可用` : '无门槛',
+                discountText: Number(item.discount || 0).toFixed(2)
+            }))
+            this.setData({
+                allPrice: Number(quote.totalPrice).toFixed(2),
+                ticketDiscount: Number(quote.ticketDiscount).toFixed(2),
+                couponDiscount: Number(quote.couponDiscount).toFixed(2),
+                cashPrice: Number(quote.payable).toFixed(2),
+                selectedUserCouponId: quote.selectedUserCouponId || null,
+                selectedCouponName: quote.couponName || '',
+                couponOptions: options,
+                availableCouponCount: options.filter(item => item.available).length,
+                quoteLoading: false
+            })
+            if (quote.selectedCouponError) wx.showToast({ title: quote.selectedCouponError, icon: 'none' })
+            return !quote.selectedCouponError
+        }).catch(error => {
+            if (sequence !== this.quoteSequence) return false
+            this.setData({ quoteLoading: false, quoteError: true })
+            wx.showToast({ title: error.message || '优惠计算失败，请重试', icon: 'none' })
+            return false
         })
-        setTimeout(() => {
+    },
+    showCoupons() {
+        if (!this.data.submitting) this.setData({ couponModal: true })
+    },
+    closeCoupons() { this.setData({ couponModal: false }) },
+    preventClose() {},
+    chooseCoupon(e) {
+        if (this.data.submitting || this.data.quoteLoading) return
+        const id = e.currentTarget.dataset.id
+        const coupon = id ? this.data.couponOptions.find(item => String(item.userCouponId) === String(id)) : null
+        if (id && (!coupon || !coupon.available)) return
+        this.setData({ selectedUserCouponId: coupon ? coupon.userCouponId : null, couponModal: false })
+        return this.refreshQuote()
+    },
+    couponCenter() { this.closeCoupons(); wx.navigateTo({ url: '/pages/coupon/index/index' }) },
+    async submit() {
+        if (this.data.submitting || this.data.quoteLoading) return
+        if (!this.data.addressInfo || !this.data.orderList.length) {
+            wx.showToast({ title: '请确认商品及默认收货地址', icon: 'none' })
+            return
+        }
+        this.setData({ submitting: true })
+        try {
+            if (!await this.refreshQuote()) return
+            wx.showLoading({ title: '正在提交订单', mask: true })
             if (this.data.orderType == 1) {
                 const lines = this.data.orderList.map(item => ({
                     orderId: item.orderId,
                     commodityNum: item.commodityNum,
                     ticketNum: item.ticketNum
                 }))
-                http.post('completeCart', { userId: this.data.userInfo.id, addressId: this.data.addressInfo.id, lines }).then((r) => {
-                    wx.showToast({
-                        title: '支付成功',
-                        icon: 'success',
-                        duration: 1000
-                    })
-                    setTimeout(() => {
-                        wx.navigateBack({ changed: true });
-                    }, 1000)
-                })
+                await http.post('completeCart', { userId: this.data.userInfo.id, addressId: this.data.addressInfo.id, userCouponId: this.data.selectedUserCouponId, lines }, false)
             } else {
                 let item = this.data.orderList[0]
                 let data = {
@@ -151,20 +218,22 @@ Page({
                     commodityNum: item.commodityNum,
                     ticketNum: item.ticketNum,
                     addressId: this.data.addressInfo.id,
-                    userId: this.data.userInfo.id
+                    userId: this.data.userInfo.id,
+                    userCouponId: this.data.selectedUserCouponId
                 }
-                http.post('buyGoods', data).then((r) => {
-                    wx.showToast({
-                        title: '支付成功',
-                        icon: 'success',
-                        duration: 1000
-                    })
-                    setTimeout(() => {
-                        wx.navigateBack({ changed: true });
-                    }, 1000)
-                })
+                await http.post('buyGoods', data, false)
             }
             wx.hideLoading()
-        }, 1000)
+            this.orderSubmitted = true
+            wx.showToast({ title: '下单成功', icon: 'success', duration: 1000 })
+            // Keep the submit guard active until this page leaves.
+            setTimeout(() => wx.navigateBack({ changed: true }), 1000)
+        } catch (error) {
+            wx.hideLoading()
+            wx.showToast({ title: error.message || '下单失败，请重试', icon: 'none' })
+            await this.refreshQuote()
+        } finally {
+            if (!this.orderSubmitted) this.setData({ submitting: false })
+        }
     }
 });

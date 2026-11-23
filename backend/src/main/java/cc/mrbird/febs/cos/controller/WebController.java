@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api")
@@ -57,6 +56,10 @@ public class WebController {
     private final IOrderDetailService orderDetailService;
 
     private final WaterTicketService waterTicketService;
+
+    private final CouponCheckoutService couponCheckoutService;
+
+    private final cc.mrbird.febs.cos.dao.OrderInfoMapper orderMapper;
 
     @PostMapping("/userAdd")
     public R userAdd(@RequestBody UserInfo user) throws Exception {
@@ -413,6 +416,9 @@ public class WebController {
         orderInfo.setOrderStatus(0);
         orderInfo.setCommodityNum(1);
         orderInfo.setTicketNum(0);
+        orderInfo.setUserCouponId(null);
+        orderInfo.setCouponName(null);
+        orderInfo.setCouponDiscount(java.math.BigDecimal.ZERO);
         orderInfo.setOrderPrice(commodity.getPrice());
         // 查询用户默认地址
         AddressInfo addressInfo = addressInfoService.getOne(Wrappers.<AddressInfo>lambdaQuery().eq(AddressInfo::getUserId, orderInfo.getUserId())
@@ -454,47 +460,61 @@ public class WebController {
         return R.ok(orderInfoService.selOrderListByOrderIds(ids));
     }
 
+    @PostMapping("/coupon/checkout")
+    public R previewCheckout(@RequestBody CouponCheckoutRequest request) {
+        return R.ok(couponCheckoutService.preview(request.getUserId(), request.getLines(), request.getUserCouponId()));
+    }
+
     @PostMapping("/completeCart")
     @Transactional(rollbackFor = Exception.class)
     public R completeCart(@RequestBody Map<String, Object> payload) {
         Integer userId = Integer.valueOf(String.valueOf(payload.get("userId")));
         List<Map<String, Object>> lines = (List<Map<String, Object>>) payload.get("lines");
-        if (lines == null || lines.isEmpty()) throw new IllegalArgumentException("请选择要结算的商品");
+        if (lines == null || lines.isEmpty() || lines.size() > 100) throw new IllegalArgumentException("请选择1至100条商品进行结算");
         Integer addressId = payload.get("addressId") == null ? null
                 : Integer.valueOf(String.valueOf(payload.get("addressId")));
         AddressInfo address = requireOrderAddress(userId, addressId);
         List<Map<String, Object>> result = new java.util.ArrayList<>();
+        java.util.SortedMap<Integer, Map<String, Object>> uniqueLines = new java.util.TreeMap<>();
         for (Map<String, Object> line : lines) {
-            Integer orderId = Integer.valueOf(String.valueOf(line.get("orderId")));
+            Integer id = Integer.valueOf(String.valueOf(line.get("orderId")));
+            if (uniqueLines.put(id, line) != null) throw new IllegalArgumentException("请勿重复提交同一购物车商品");
+        }
+        List<OrderInfo> orders = new ArrayList<>();
+        for (Map.Entry<Integer, Map<String, Object>> entry : uniqueLines.entrySet()) {
+            Integer orderId = entry.getKey();
+            Map<String, Object> line = entry.getValue();
             int quantity = Integer.parseInt(String.valueOf(line.get("commodityNum")));
             int ticketNum = Integer.parseInt(String.valueOf(line.get("ticketNum")));
-            OrderInfo order = orderInfoService.getById(orderId);
+            OrderInfo order = orderMapper.selectForUpdate(orderId);
             if (order == null || !userId.equals(order.getUserId()) || !Integer.valueOf(0).equals(order.getOrderStatus())) {
                 throw new IllegalArgumentException("购物车商品已变化，请刷新后重试");
             }
-            CommodityInfo commodity = commodityInfoService.getById(order.getCommodityId());
-            if (commodity == null || !"1".equals(commodity.getOnPut()) || quantity <= 0 || ticketNum < 0 || ticketNum > quantity ||
-                    (commodity.getStockNum() != null && quantity > commodity.getStockNum())) {
-                throw new IllegalArgumentException("商品数量或水票数量无效");
-            }
-            String code = order.getCode();
-            waterTicketService.consume(userId, commodity.getId(), ticketNum, code);
             order.setCommodityNum(quantity);
             order.setTicketNum(ticketNum);
             order.setAddressId(address.getId());
-            order.setOrderPrice(commodity.getPrice().multiply(BigDecimal.valueOf(quantity - ticketNum)));
+            orders.add(order);
+        }
+        Long userCouponId = payload.get("userCouponId") == null ? null : Long.valueOf(String.valueOf(payload.get("userCouponId")));
+        couponCheckoutService.settle(userId, orders, userCouponId);
+        for (OrderInfo order : orders) {
+            String code = order.getCode();
+            waterTicketService.consume(userId, order.getCommodityId(), order.getTicketNum(), code);
             order.setPayDate(DateUtil.formatDateTime(new Date()));
             order.setUserNum(1);
             order.setOrderStatus(OrderStatus.PENDING_DELIVERY);
-            orderInfoService.updateById(order);
-            orderDetailService.update(Wrappers.<OrderDetail>lambdaUpdate()
+            if (!orderInfoService.updateById(order)) throw new IllegalStateException("订单保存失败，请重试");
+            if (!orderDetailService.update(Wrappers.<OrderDetail>lambdaUpdate()
                     .set(OrderDetail::getAddressId, address.getId())
-                    .eq(OrderDetail::getCode, code).eq(OrderDetail::getUserId, userId));
+                    .eq(OrderDetail::getCode, code).eq(OrderDetail::getUserId, userId)))
+                throw new IllegalStateException("订单收货信息保存失败，请重试");
             Map<String, Object> summary = new LinkedHashMap<>();
-            summary.put("orderId", orderId);
+            summary.put("orderId", order.getId());
             summary.put("orderPrice", order.getOrderPrice());
-            summary.put("commodityNum", quantity);
-            summary.put("ticketNum", ticketNum);
+            summary.put("commodityNum", order.getCommodityNum());
+            summary.put("ticketNum", order.getTicketNum());
+            summary.put("couponDiscount", order.getCouponDiscount());
+            summary.put("couponName", order.getCouponName());
             result.add(summary);
         }
         return R.ok(result);
@@ -509,25 +529,17 @@ public class WebController {
     @PostMapping("/buyGoods")
     @Transactional(rollbackFor = Exception.class)
     public R buyGoods(@RequestBody OrderInfo orderInfo) {
-        CommodityInfo commodity = commodityInfoService.getById(orderInfo.getCommodityId());
-        if (commodity == null || !"1".equals(commodity.getOnPut())) throw new IllegalArgumentException("商品已下架");
-        int quantity = orderInfo.getCommodityNum() == null ? 1 : orderInfo.getCommodityNum();
-        int ticketNum = orderInfo.getTicketNum() == null ? 0 : orderInfo.getTicketNum();
-        if (quantity <= 0 || ticketNum < 0 || ticketNum > quantity ||
-                (commodity.getStockNum() != null && quantity > commodity.getStockNum())) {
-            throw new IllegalArgumentException("商品数量或水票数量无效");
-        }
-        orderInfo.setCode("ORD-" + System.currentTimeMillis());
+        AddressInfo addressInfo = requireOrderAddress(orderInfo.getUserId(), orderInfo.getAddressId());
+        couponCheckoutService.settle(orderInfo.getUserId(), java.util.Collections.singletonList(orderInfo), orderInfo.getUserCouponId());
+        orderInfo.setId(null);
+        orderInfo.setCode("ORD-" + java.util.UUID.randomUUID().toString().replace("-", ""));
         orderInfo.setCreateDate(DateUtil.formatDateTime(new Date()));
         orderInfo.setPayDate(DateUtil.formatDateTime(new Date()));
         orderInfo.setOrderStatus(OrderStatus.PENDING_DELIVERY);
         orderInfo.setUserNum(1);
-        orderInfo.setCommodityNum(quantity);
-        orderInfo.setTicketNum(ticketNum);
-        orderInfo.setOrderPrice(commodity.getPrice().multiply(BigDecimal.valueOf(quantity - ticketNum)));
-        AddressInfo addressInfo = requireOrderAddress(orderInfo.getUserId(), orderInfo.getAddressId());
+        orderInfo.setFinishDate(null);
         orderInfo.setAddressId(addressInfo.getId());
-        waterTicketService.consume(orderInfo.getUserId(), commodity.getId(), ticketNum, orderInfo.getCode());
+        waterTicketService.consume(orderInfo.getUserId(), orderInfo.getCommodityId(), orderInfo.getTicketNum(), orderInfo.getCode());
 
         // 添加订单详情
         OrderDetail orderDetail = new OrderDetail();
@@ -536,9 +548,17 @@ public class WebController {
         orderDetail.setOrderStatus("0");
         orderDetail.setCreateDate(DateUtil.formatDateTime(new Date()));
         orderDetail.setAddressId(orderInfo.getAddressId());
-        orderDetailService.save(orderDetail);
+        if (!orderDetailService.save(orderDetail) || !orderInfoService.save(orderInfo)) throw new IllegalStateException("订单保存失败，请重试");
+        return R.ok(true);
+    }
 
-        return R.ok(orderInfoService.save(orderInfo));
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(org.springframework.http.HttpStatus.BAD_REQUEST)
+    public Map<String, Object> invalidCheckoutInput(IllegalArgumentException error) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("code", 400);
+        result.put("message", error instanceof NumberFormatException ? "商品、数量或优惠券参数无效" : error.getMessage());
+        return result;
     }
 
     private AddressInfo requireOrderAddress(Integer userId, Integer addressId) {

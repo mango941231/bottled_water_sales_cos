@@ -1,6 +1,7 @@
 package cc.mrbird.febs.cos.controller;
 
 import cc.mrbird.febs.cos.entity.*;
+import cc.mrbird.febs.cos.dao.OrderInfoMapper;
 import cc.mrbird.febs.cos.service.*;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.core.toolkit.TableInfoHelper;
@@ -57,11 +58,18 @@ public class OrderCheckoutTest {
         }));
         dependencies.put(WaterTicketService.class, new WaterTicketService(null, null, null, null, null) {
             @Override
+            public int available(Integer userId, Integer commodityId) { return 100; }
+
+            @Override
             public int consume(Integer userId, Integer commodityId, int requested, String code) {
                 consumed += requested;
                 return requested;
             }
         });
+        dependencies.put(OrderInfoMapper.class, service(OrderInfoMapper.class, (method, args) -> cart));
+        dependencies.put(CouponCheckoutService.class, new CouponCheckoutService(null, null, null,
+                (ICommodityInfoService) dependencies.get(ICommodityInfoService.class),
+                (WaterTicketService) dependencies.get(WaterTicketService.class)));
         Constructor<?> constructor = WebController.class.getConstructors()[0];
         Object[] args = Arrays.stream(constructor.getParameterTypes()).map(dependencies::get).toArray();
         controller = (WebController) constructor.newInstance(args);
@@ -127,6 +135,35 @@ public class OrderCheckoutTest {
         } catch (IllegalArgumentException expected) {
             assertNull(saved);
             assertEquals(0, consumed);
+        }
+    }
+
+    @Test
+    public void duplicateCartRowsAreRejectedBeforeConsumingTickets() {
+        Map<String, Object> line = new HashMap<>();
+        line.put("orderId", 10); line.put("commodityNum", 2); line.put("ticketNum", 1);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("userId", 3); payload.put("lines", Arrays.asList(line, line));
+        try {
+            controller.completeCart(payload);
+            fail("Expected duplicate cart validation");
+        } catch (IllegalArgumentException expected) {
+            assertNull(saved); assertEquals(0, consumed);
+        }
+    }
+
+    @Test
+    public void anotherUsersCartCannotBeCheckedOut() {
+        cart.setUserId(99);
+        Map<String, Object> line = new HashMap<>();
+        line.put("orderId", 10); line.put("commodityNum", 2); line.put("ticketNum", 1);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("userId", 3); payload.put("lines", Collections.singletonList(line));
+        try {
+            controller.completeCart(payload);
+            fail("Expected cart ownership validation");
+        } catch (IllegalArgumentException expected) {
+            assertNull(saved); assertEquals(0, consumed);
         }
     }
 

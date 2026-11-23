@@ -79,16 +79,21 @@
         </view>
     </view>
 
-    <!-- <view class="canui-coupon">
+    <view class="canui-coupon">
         <view class="cu-list menu bg-white solid-bottom canui-selet">
-            <view class="cu-item arrow">
+            <view class="cu-item arrow" bindtap="showCoupons">
                 <view class='content'>优惠券</view>
                 <view class='action'>
-                    无可用
+                    <text wx:if="{{selectedUserCouponId}}" class="text-red">{{selectedCouponName}} · -¥{{couponDiscount}}</text>
+                    <text wx:elif="{{quoteLoading}}" class="text-gray">正在计算</text>
+                    <text wx:elif="{{quoteError}}" class="text-red">计算失败，请重试</text>
+                    <text wx:else class="text-gray">{{availableCouponCount > 0 ? availableCouponCount + ' 张可用，点击选择' : '暂无可用优惠券'}}</text>
                 </view>
             </view>
         </view>
-    </view> -->
+        <view class="coupon-rule">每次结算限用一张；水票抵扣后计算优惠，商品专用券仅抵扣关联商品。</view>
+        <view wx:if="{{quoteError}}" class="coupon-retry" bindtap="refreshQuote">重新计算优惠</view>
+    </view>
 
     <view class="order-price-log">
         <view class="bg-white log-card">
@@ -96,13 +101,14 @@
                 <text>商品总价</text> <text class="text-price canui-text-right">{{ allPrice }}</text>
             </view>
             <view class="log-list" wx:if="{{orderList.length}}">
-                <text>水票抵扣</text> <text class="canui-text-right text-green">{{totalTicketNum}} 桶</text>
+                <text>水票抵扣（{{totalTicketNum}} 桶）</text> <text class="canui-text-right text-green">-¥{{ticketDiscount}}</text>
             </view>
+            <view class="log-list"><text>优惠券抵扣</text><text class="canui-text-right text-red">-¥{{couponDiscount}}</text></view>
             <!-- <view class="log-list">
                 <text>运费(快递)</text> <text class="text-price canui-text-right text-red">0.00</text>
             </view> -->
             <view class="log-list bg-white text-df">
-                <text>订单总价</text><text class="text-sm text-gray">（手续费除外）</text>
+                <text>实付金额</text>
                 <text class="text-price canui-text-right text-red">{{ cashPrice }}</text>
             </view>
         </view>
@@ -114,6 +120,29 @@
     <view class="bg-red light text-sm canui-pay-tip">下单后将安排配送，请收到商品后确认收货</view>
     <view class="canui-submit">
         <text class='text-red text-price canui-price'>{{ cashPrice }}</text>
-        <text class='bg-red canui-submit-btn' bindtap='submit'>提交订单</text>
+        <button class="bg-red canui-submit-btn" disabled="{{submitting || quoteLoading || quoteError}}" loading="{{submitting}}" bindtap="submit">{{quoteLoading ? '计算中' : submitting ? '提交中' : '提交订单'}}</button>
+    </view>
+</view>
+
+<view wx:if="{{couponModal}}" class="coupon-mask" bindtap="closeCoupons">
+    <view class="coupon-sheet" catchtap="preventClose">
+        <view class="coupon-sheet-heading"><text>选择优惠券</text><text bindtap="closeCoupons">关闭</text></view>
+        <view class="coupon-rule">全场通用券适用全部商品；商品专用券仅抵扣本次结算中符合范围的商品。</view>
+        <view class="coupon-none" bindtap="chooseCoupon">不使用优惠券 <text wx:if="{{!selectedUserCouponId}}" class="text-green">✓</text></view>
+        <scroll-view scroll-y class="coupon-scroll">
+            <view wx:if="{{!couponOptions.length}}" class="coupon-empty">暂无已领取的优惠券</view>
+            <view wx:for="{{couponOptions}}" wx:key="userCouponId" class="checkout-coupon {{item.available ? '' : 'coupon-disabled'}} {{selectedUserCouponId == item.userCouponId ? 'coupon-selected' : ''}}" data-id="{{item.userCouponId}}" bindtap="chooseCoupon">
+                <view class="coupon-value">{{item.valueText}}</view>
+                <view class="coupon-info">
+                    <view class="coupon-name">{{item.name}}</view>
+                    <view>{{item.scopeText}}</view>
+                    <view>{{item.conditionText}}</view>
+                    <view>到期时间：{{item.expireTime}}</view>
+                    <view wx:if="{{item.available}}" class="text-red">本单可省 ¥{{item.discountText}} {{selectedUserCouponId == item.userCouponId ? '✓' : ''}}</view>
+                    <view wx:else class="coupon-unavailable">{{item.reason}}</view>
+                </view>
+            </view>
+        </scroll-view>
+        <view class="coupon-center-link" bindtap="couponCenter">去优惠中心领券 <text class="icon-right"></text></view>
     </view>
 </view>

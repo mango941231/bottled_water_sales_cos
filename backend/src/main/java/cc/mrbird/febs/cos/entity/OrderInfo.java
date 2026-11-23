@@ -88,6 +88,13 @@ public class OrderInfo implements Serializable {
     /** Quantity paid with water tickets. */
     private Integer ticketNum;
 
+    /** Redeemed user coupon and its name at checkout. */
+    private Long userCouponId;
+    private String couponName;
+
+    /** Coupon discount allocated to this order, after water-ticket deductions. */
+    private BigDecimal couponDiscount;
+
     /**
      * 完成时间
      */
