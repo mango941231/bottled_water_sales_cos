@@ -18,14 +18,12 @@ Page({
 		}],
 		iconList: [{
 			id: 1,
-			iconText: '票',
-			color: 'blue',
+			iconClass: 'icon-ticket',
 			name: '水票中心',
 			type: 1
 		}, {
 			id: 2,
-			iconText: '惠',
-			color: 'orange',
+			iconClass: 'icon-redpacket_fill',
 			name: '优惠中心',
 			type: 2
 		}],
@@ -48,15 +46,30 @@ Page({
 	    // });
 		this.home()
 	},
+	onProductImageError(e) {
+		const id = e.currentTarget.dataset.id
+		this.setData({
+			commodityHot: this.data.commodityHot.map(item => item.id == id ? Object.assign({}, item, { imageUrl: '' }) : item)
+		})
+	},
 	home() {
 		http.get('home').then((r) => {
-			r.commodityHot.forEach(item => {
-				item.image = item.images ? item.images.split(',')[0] : ''
+			const products = Array.isArray(r.commodityHot) ? r.commodityHot : []
+			products.forEach(item => {
+				const image = item.images || item.image || ''
+				const firstImage = (Array.isArray(image) ? image : String(image).split(','))[0]
+				item.imageUrl = this.resolveImageUrl(firstImage)
 			});
 			this.setData({
-				commodityHot: r.commodityHot
+				commodityHot: products
 			})
-		})
+		}).catch(() => this.setData({ commodityHot: [] }))
+	},
+	resolveImageUrl(path) {
+		if (!path) return ''
+		const value = String(path).trim()
+		if (/^(https?:)?\/\//i.test(value)) return value
+		return this.data.imageBaseUrl + value.replace(/^\/?(?:febs\/)?imagesWeb\//i, '').replace(/^\/+/, '')
 	},
 	swiperchange: function (e) {
 		this.setData({

@@ -378,7 +378,12 @@ public class WebController {
      */
     @GetMapping("/goodsDetail")
     public R goodsDetail(@RequestParam Integer commodityId) {
-        return R.ok(commodityInfoService.goodsDetail(commodityId));
+        LinkedHashMap<String, Object> goods = commodityInfoService.goodsDetail(commodityId);
+        if (goods == null) {
+            return R.error(404, "商品不存在或已删除");
+        }
+        // Keep the product's code inside data so it cannot replace the response status code.
+        return R.ok().put("data", goods);
     }
 
     /**

@@ -13,24 +13,42 @@ Page({
         buyTicketBusy: false
     },
     onLoad: function (options) {
-        this.setData({ commoditId: options.commoditId })
-        this.getGoodsDetail(options.commoditId)
-        this.getEvaluationByGoods(options.commoditId)
-        this.getTicketPackages(options.commoditId)
+        const commodityId = options.commodityId || options.commoditId
+        this.setData({ commoditId: commodityId })
+        this.getGoodsDetail(commodityId)
+        this.getEvaluationByGoods(commodityId)
+        this.getTicketPackages(commodityId)
     },
     getGoodsDetail(commodityId) {
-        http.get('goodsDetail', { commodityId }).then((r) => {
-            const goods = r.data || r
+        return http.get('goodsDetail', { commodityId }).then((r) => {
+            let goods = r
+            for (let i = 0; i < 3 && goods && goods.data && typeof goods.data === 'object'; i++) {
+                goods = goods.data
+            }
             if (!goods || goods.id == null) {
                 throw new Error('商品信息不存在')
             }
+            const rawImages = goods.images || goods.image || goods.imageUrl || ''
+            const images = (Array.isArray(rawImages) ? rawImages : String(rawImages).split(','))
+                .map(path => this.resolveImageUrl(path))
+                .filter(Boolean)
             this.setData({
-                swiperlist: goods.images ? goods.images.split(',').filter(Boolean) : [],
-                goods
+                swiperlist: images,
+                goods: Object.assign({}, goods, { images, imageUrl: images[0] || '' })
             })
         }).catch((error) => {
             wx.showToast({ title: error.message || '商品信息加载失败', icon: 'none' })
         })
+    },
+    resolveImageUrl(path) {
+        if (!path) return ''
+        const value = String(path).trim()
+        if (/^(https?:)?\/\//i.test(value)) return value
+        return this.data.imageBaseUrl + value.replace(/^\/?(?:febs\/)?imagesWeb\//i, '').replace(/^\/+/, '')
+    },
+    onDetailImageError(e) {
+        const failedIndex = Number(e.currentTarget.dataset.index)
+        this.setData({ swiperlist: this.data.swiperlist.filter((item, index) => index !== failedIndex) })
     },
     getEvaluationByGoods(commodityId) {
         http.get('getEvaluationByGoods', { commodityId }).then((r) => {

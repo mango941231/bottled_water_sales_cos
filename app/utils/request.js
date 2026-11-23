@@ -28,7 +28,18 @@ function fetch(options) {
         if (options.loading) {
           wx.hideLoading()
         }
-        const payload = res.data || {}
+        let payload = res.data || {}
+        // Older goodsDetail responses merge product fields into the response envelope.
+        // Accept that specific format while keeping business errors rejected.
+        if (options.url === 'goodsDetail' && res.statusCode === 200 &&
+            payload.msg === 'success' && payload.id != null &&
+            typeof payload.code === 'string' && /^COMM-/.test(payload.code)) {
+          payload = { code: 0, msg: 'success', data: payload }
+        }
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error(payload.message || payload.msg || '请求失败'))
+          return
+        }
         if (payload.code == 1) {
           // 重新登陆
           const error = new Error(payload.message || payload.msg || '登录状态已失效')

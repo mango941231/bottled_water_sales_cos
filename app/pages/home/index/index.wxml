@@ -24,10 +24,12 @@
 
 <!--宫格功能区域-->
 <view class="cu-list grid col-4 no-border">
-    <block wx:for="{{iconList}}" wx:key="item.id">
-        <view class="cu-item" bindtap="itemckcred" data-index="{{item.id}}" data-itemtype="{{item.type}}">
-            <view class='shortcut-icon text-{{item.color}}'>{{item.iconText}}</view>
-            <text>{{item.name}}</text>
+    <block wx:for="{{iconList}}" wx:key="id">
+        <view class="shortcut-item" bindtap="itemckcred" data-index="{{item.id}}" data-itemtype="{{item.type}}">
+            <view class="shortcut-icon shortcut-{{item.type}}">
+                <text class="shortcut-glyph {{item.iconClass}}"></text>
+            </view>
+            <text class="shortcut-label">{{item.name}}</text>
         </view>
     </block>
 </view>
@@ -44,28 +46,17 @@
 
 </view>
 <view class="bg-white" style="padding:0 30rpx;padding-bottom: 20rpx;">
-    <view class='nav-list canui-flex-car'>
-
-        <navigator wx:for="{{commodityHot}}" open-type="navigate" hover-class='none' url="/pages/shop/goods/details?commoditId={{item.id}}" class="nav-li canui-yx-url">
-            <view class="flex-sub cu-card case shadow-warp bg-white">
-                <view class="cu-item shadow">
-                    <view class='image'>
-                        <image src="{{imageBaseUrl}}{{ item.image }}" mode="widthFix"></image>
-                    </view>
-                    <view class="cu-list menu menu-avatar">
-                        <view class="cu-item">
-                            <view class='content flex-sub'>
-                                <view class='text-grey' style="font-size: 12px">{{ item.name }}</view>
-                                <view class='text-gray text-sm flex justify-between'>
-                                    销量：{{item.orderNum}}
-                                </view>
-                                <view class='home-price'>¥{{item.price}}</view>
-                            </view>
-                        </view>
-                    </view>
-                </view>
+    <view class="product-grid">
+        <navigator wx:for="{{commodityHot}}" wx:key="id" open-type="navigate" hover-class="none" url="/pages/shop/goods/details?commodityId={{item.id}}" class="product-card">
+            <view class="product-image-wrap">
+                <image wx:if="{{item.imageUrl}}" class="product-image" src="{{item.imageUrl}}" mode="aspectFill" binderror="onProductImageError" data-id="{{item.id}}"></image>
+                <view wx:else class="product-image-placeholder"><text class="icon-goods"></text></view>
+            </view>
+            <view class="product-info">
+                <view class="product-name">{{item.name}}</view>
+                <view class="product-sales">销量 {{item.orderNum || 0}}</view>
+                <view class="home-price">¥{{item.price}}</view>
             </view>
         </navigator>
-
     </view>
 </view>

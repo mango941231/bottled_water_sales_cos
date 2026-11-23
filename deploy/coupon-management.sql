@@ -20,7 +20,7 @@ CREATE TABLE coupon_template (
     end_time DATETIME NULL,
     total_count INT NULL COMMENT 'NULL表示不限量',
     claimed_count INT NOT NULL DEFAULT 0,
-    status TINYINT NOT NULL DEFAULT 1,
+    status TINYINT NOT NULL DEFAULT 1 COMMENT '1=启用 0=停用 -1=已删除',
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_coupon_template_status_time (status, start_time, end_time)
@@ -47,9 +47,9 @@ CREATE TABLE user_coupon (
     KEY idx_user_coupon_user_status (user_id, status, expire_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户已领取优惠券';
 
--- Create a submenu under the existing product-management menu and grant the same roles.
+-- Create a sibling of the product-management menu and grant the same roles.
 INSERT INTO t_menu (PARENT_ID, MENU_NAME, PATH, COMPONENT, PERMS, ICON, TYPE, ORDER_NUM, CREATE_TIME, MODIFY_TIME)
-SELECT parent.MENU_ID, '优惠券管理', '/manage/coupon', 'manage/commodity/Coupon', '', 'gift', '0', 3, NOW(), NOW()
+SELECT parent.PARENT_ID, '优惠券管理', '/manage/coupon', 'manage/coupon/Coupon', '', 'gift', '0', COALESCE(parent.ORDER_NUM, 0) + 0.1, NOW(), NOW()
 FROM t_menu parent
 WHERE (parent.PATH = '/manage/commodity' OR parent.COMPONENT LIKE '%commodity/Commodity%')
   AND NOT EXISTS (SELECT 1 FROM t_menu existing WHERE existing.PATH = '/manage/coupon')

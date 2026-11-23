@@ -1,6 +1,9 @@
 .screen-swiper {
-    min-height:555rpx;
+    height: 680rpx;
+    background: #fff;
 }
+.screen-swiper image { display:block; width:100%; height:100%; }
+.detail-image-placeholder { display:flex; align-items:center; justify-content:center; height:680rpx; color:#c6ccd2; background:#f6f7f8; font-size:88rpx; }
 /*-------左上角按钮-------*/
 .canui-head-box{
     position:fixed;

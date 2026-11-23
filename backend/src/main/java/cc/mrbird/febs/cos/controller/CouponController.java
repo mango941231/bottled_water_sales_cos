@@ -8,6 +8,7 @@ import cc.mrbird.febs.system.domain.User;
 import cn.hutool.core.date.DateUtil;
 import lombok.RequiredArgsConstructor;
 import org.apache.shiro.authz.UnauthorizedException;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -22,13 +23,25 @@ public class CouponController {
     @GetMapping("/admin/list")
     public R list() { requireAdmin(); return R.ok(couponService.listForAdmin()); }
 
-    @PostMapping("/admin")
+    @GetMapping("/admin/page")
+    public R page(@RequestParam(defaultValue = "1") long current, @RequestParam(defaultValue = "10") long size,
+                  @RequestParam(required = false) String name, @RequestParam(required = false) String couponType,
+                  @RequestParam(required = false) Integer status) {
+        requireAdmin();
+        return R.ok(couponService.pageForAdmin(current, size, name, couponType, status));
+    }
+
+    @GetMapping("/admin/{id}")
+    public R detail(@PathVariable Long id) { requireAdmin(); return R.ok(couponService.detailForAdmin(id)); }
+
+    @RequestMapping(value = "/admin", method = {RequestMethod.POST, RequestMethod.PUT})
     public R save(@RequestParam Map<String, String> params) {
         requireAdmin();
         CouponTemplate template = new CouponTemplate();
         if (params.get("id") != null && !params.get("id").isEmpty()) template.setId(Long.valueOf(params.get("id")));
         template.setName(params.get("name")); template.setCouponType(params.get("couponType"));
         template.setDiscountType(params.get("discountType"));
+        if (params.get("discountValue") == null || params.get("validDays") == null) throw new IllegalArgumentException("请填写优惠金额和有效期");
         template.setDiscountValue(new BigDecimal(params.get("discountValue")));
         template.setMinSpend(params.get("minSpend") == null || params.get("minSpend").isEmpty() ? BigDecimal.ZERO : new BigDecimal(params.get("minSpend")));
         template.setValidDays(Integer.valueOf(params.get("validDays")));
@@ -45,7 +58,16 @@ public class CouponController {
     }
 
     @DeleteMapping("/admin/{id}")
-    public R disable(@PathVariable Long id) { requireAdmin(); couponService.disable(id); return R.ok(); }
+    public R delete(@PathVariable Long id) { requireAdmin(); couponService.delete(id); return R.ok(); }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, Object> invalidInput(IllegalArgumentException error) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 400);
+        response.put("message", error instanceof NumberFormatException ? "数量或金额格式无效" : error.getMessage());
+        return response;
+    }
 
     private void requireAdmin() {
         User user = FebsUtil.getCurrentUser();
@@ -57,6 +79,11 @@ public class CouponController {
     }
 
     private Date parseDate(String value) {
-        return value == null || value.trim().isEmpty() ? null : DateUtil.parse(value.trim());
+        if (value == null || value.trim().isEmpty()) return null;
+        try {
+            return DateUtil.parse(value.trim());
+        } catch (RuntimeException error) {
+            throw new IllegalArgumentException("活动时间格式无效，请选择有效日期");
+        }
     }
 }
